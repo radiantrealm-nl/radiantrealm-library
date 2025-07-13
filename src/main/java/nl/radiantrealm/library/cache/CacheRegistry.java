@@ -33,8 +33,6 @@ public abstract class CacheRegistry<K, V> {
 
     protected abstract Map<K, V> load(List<K> keys);
 
-    public record Index<V>(Class<?> type) {}
-
     private void put(K key, V value) {
         if (key != null || value != null) {
             dataMap.put(key, value);
