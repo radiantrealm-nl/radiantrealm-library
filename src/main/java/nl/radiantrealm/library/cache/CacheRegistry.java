@@ -7,7 +7,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class CacheRegistry<K, V> {
-    private final Logger logger = Logger.getLogger(CacheRegistry.class);
+    protected final Logger logger = Logger.getLogger(CacheRegistry.class);
 
     private final Map<K, V> dataMap = new ConcurrentHashMap<>();
     private final Map<K, Long> expiryMap = new ConcurrentHashMap<>();
