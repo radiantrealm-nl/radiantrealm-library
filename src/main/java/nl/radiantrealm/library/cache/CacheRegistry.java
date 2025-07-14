@@ -55,10 +55,8 @@ public abstract class CacheRegistry<K, V> {
     protected abstract Map<K, Optional<V>> load(List<K> keys) throws Exception;
 
     private void put(K key, V value) {
-        if (key != null || value != null) {
-            dataMap.put(key, value);
-            expiryMap.put(key, System.currentTimeMillis() + expiry);
-        }
+        dataMap.put(key, value);
+        expiryMap.put(key, System.currentTimeMillis() + expiry);
     }
 
     public V get(K key) {
