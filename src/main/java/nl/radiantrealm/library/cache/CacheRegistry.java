@@ -59,8 +59,6 @@ public abstract class CacheRegistry<K, V> {
         expiryMap.put(key, System.currentTimeMillis() + expiry);
     }
 
-    public V get(K key) {
-        if (key == null) return null;
     /**
      * Retrieves an optional value associated with the given key from the cache.
      * If the key is not present in the cache, the value is loaded using the {@link #load(Object)} method.
@@ -70,12 +68,26 @@ public abstract class CacheRegistry<K, V> {
      * @return An {@link Optional} containing the value if found or successfully loaded, or {@link Optional#empty()} if the key is null or the value could not be loaded.
      * @since 1.0.0
      * */
+    public Optional<V> get(K key) {
+        if (key == null) return Optional.empty();
 
-        return dataMap.computeIfAbsent(key, k -> {
+        if (dataMap.containsKey(key)) {
+            return Optional.of(dataMap.get(key));
+        }
+
+        try {
             V value = load(key);
+
+            if (value == null) {
+                return Optional.empty();
+            }
+
             put(key, value);
-            return value;
-        });
+            return Optional.of(value);
+        } catch (Exception e) {
+            logger.error(String.format("Failed to retrieve value for %s.", key), e);
+            return Optional.empty();
+        }
     }
 
     public Map<K, V> get(List<K> keys) {
