@@ -90,13 +90,6 @@ public abstract class CacheRegistry<K, V> {
         }
     }
 
-    public Map<K, V> get(List<K> keys) {
-        if (keys == null) return null;
-        if (keys.isEmpty()) return null;
-        if (keys.size() == 1) return Map.of(keys.getFirst(), get(keys.getFirst()));
-
-        Map<K, V> result = new HashMap<>();
-        List<K> notFoundYet = new ArrayList<>();
     /**
      * Retrieves a key-value map based on the provided list of keys.
      * For each key in the list, the method attempts to retrieve the associated value from the cache.
@@ -107,18 +100,33 @@ public abstract class CacheRegistry<K, V> {
      * @return A map containing the keys and their associated values. If a key is not found or cannot be loaded, it will not appear in the map.
      * @since 1.0.0
      * */
+    public Map<K, Optional<V>> get(List<K> keys) {
+        if (keys == null || keys.isEmpty()) return Map.of();
+
+        Map<K, Optional<V>> result = new HashMap<>(keys.size());
+        List<K> missingKeys = new ArrayList<>(keys.size());
 
         for (K key : keys) {
             if (dataMap.containsKey(key)) {
-                result.put(key, dataMap.get(key));
+                result.put(key, Optional.of(dataMap.get(key)));
             } else {
-                notFoundYet.add(key);
+                missingKeys.add(key);
             }
         }
 
-        if (!notFoundYet.isEmpty()) {
-            Map<K, V> onDemandResult = load(notFoundYet);
-            result.putAll(onDemandResult);
+        try {
+            Map<K, Optional<V>> loadedMap = load(missingKeys);
+
+            for (Map.Entry<K, Optional<V>> entry : loadedMap.entrySet()) {
+                if (entry.getValue().isEmpty()) {
+                    result.put(entry.getKey(), Optional.empty());
+                } else {
+                    result.put(entry.getKey(), entry.getValue());
+                    put(entry.getKey(), entry.getValue().get());
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Failed to load missing keys.", e);
         }
 
         return result;
