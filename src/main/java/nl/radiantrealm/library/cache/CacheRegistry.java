@@ -35,9 +35,6 @@ public abstract class CacheRegistry<K, V> {
         });
     }
 
-    protected abstract V load(K key);
-
-    protected abstract Map<K, V> load(List<K> keys);
     /**
      * Loads a value associated with a given key. Subclasses must implement this method to define how the value for the specified key is retrieved or generated.
      *
@@ -45,6 +42,8 @@ public abstract class CacheRegistry<K, V> {
      * @return The value associated with the given key, or null if no vlaue is found.
      * @throws Exception If an error occurs during the loading process.
      * */
+    protected abstract V load(K key) throws Exception;
+
     /**
      * Loads multiple values associated with their respective keys. Subclasses must implement this method to define how the values for the specified keys are retrieved or generated.
      *
@@ -53,6 +52,7 @@ public abstract class CacheRegistry<K, V> {
      * @throws Exception If an error occurs during the loading process.
      * @since 1.0.0
      * */
+    protected abstract Map<K, Optional<V>> load(List<K> keys) throws Exception;
 
     private void put(K key, V value) {
         if (key != null || value != null) {
