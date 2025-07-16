@@ -1,6 +1,7 @@
 package nl.radiantrealm.library.utils;
 
 import java.math.BigDecimal;
+import java.util.Optional;
 import java.util.UUID;
 
 public class FormatUtiis {
@@ -8,44 +9,62 @@ public class FormatUtiis {
     private FormatUtiis() {}
 
     /**
-     * Tries to parse a {@link String} into a {@link BigDecimal}.
+     * Formats a {@link String} into a {@link BigDecimal}, utilizing the {@link Parsable} wrapper.
      *
-     * @param string            the String to parse from
-     * @return the parsed value, or null on failure
+     * @param string Input value to format into a {@link BigDecimal}.
+     * @return A {@link Parsable} wrapper containing either the formatted result or an exception on failure.
      * */
-    public static BigDecimal parseBigDecimal(String string) {
+    public static Parsable<BigDecimal> parseBigDecimal(String string) {
         try {
-            return new BigDecimal(string);
+            return new Parsable<>(
+                    Optional.of(new BigDecimal(string)),
+                    Optional.empty()
+            );
         } catch (Exception e) {
-            return null;
+            return new Parsable<>(
+                    Optional.empty(),
+                    Optional.of(e)
+            );
         }
     }
 
     /**
-     * Tries to parse a {@link String} into an {@link Integer}.
+     * Formats a {@link String} into a {@link Integer}, utilizing the {@link Parsable} wrapper.
      *
-     * @param string            the String to parse from
-     * @return the parsed value, or null on failure.
+     * @param string Input value to format into a {@link Integer}.
+     * @return A {@link Parsable} wrapper containing either the formatted result or an exception on failure.
      * */
-    public static Integer parseInteger(String string) {
+    public static Parsable<Integer> parseInteger(String string) {
         try {
-            return Integer.valueOf(string);
+            return new Parsable<>(
+                    Optional.of(Integer.valueOf(string)),
+                    Optional.empty()
+            );
         } catch (Exception e) {
-            return null;
+            return new Parsable<>(
+                    Optional.empty(),
+                    Optional.of(e)
+            );
         }
     }
 
     /**
-     * Tries to parse a {@link String} into a {@link UUID}.
+     * Formats a {@link String} into a {@link UUID}, utilizing the {@link Parsable} wrapper.
      *
-     * @param string            the String to parse from
-     * @return the parsed value, or null on failure.
+     * @param string Input value to format into a {@link UUID}.
+     * @return A {@link Parsable} wrapper containing either the formatted result or an exception on failure.
      * */
-    public static UUID parseUUID(String string) {
+    public static Parsable<UUID> parseUUID(String string) {
         try {
-            return UUID.fromString(string);
+            return new Parsable<>(
+                    Optional.of(UUID.fromString(string)),
+                    Optional.empty()
+            );
         } catch (Exception e) {
-            return null;
+            return new Parsable<>(
+                    Optional.empty(),
+                    Optional.of(e)
+            );
         }
     }
 }
