@@ -11,4 +11,8 @@ public record Parsable<T>(Optional<T> object, Optional<Throwable> throwable) {
     public Throwable getThrowable() {
         return throwable.orElse(null);
     }
+
+    public boolean isObjectEmpty() {
+        return object.isEmpty();
+    }
 }
