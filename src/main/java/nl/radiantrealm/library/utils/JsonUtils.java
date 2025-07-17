@@ -9,6 +9,7 @@ import com.sun.net.httpserver.HttpExchange;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.math.BigDecimal;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.Collectors;
@@ -96,6 +97,81 @@ public class JsonUtils {
         }
     }
 
+    public static Parsable<BigDecimal> getJsonBigDecimal(JsonObject object, String key) {
+        try {
+            Parsable<JsonElement> element = getJsonElement(object, key);
+
+            if (element.isObjectEmpty()) {
+                return new Parsable<>(
+                        Optional.empty(),
+                        Optional.of(element.getThrowable())
+                );
+            }
+
+            Parsable<BigDecimal> decimal = FormatUtils.parseBigDecimal(element.getObject().getAsString());
+
+            return new Parsable<>(
+                    decimal.object(),
+                    decimal.throwable()
+            );
+        } catch (Exception e) {
+            return new Parsable<>(
+                    Optional.empty(),
+                    Optional.of(e)
+            );
+        }
+    }
+
+    public static Parsable<Boolean> getJsonBoolean(JsonObject object, String key) {
+        try {
+            Parsable<JsonElement> element = getJsonElement(object, key);
+
+            if (element.isObjectEmpty()) {
+                return new Parsable<>(
+                        Optional.empty(),
+                        Optional.of(element.getThrowable())
+                );
+            }
+
+            Parsable<Boolean> bool = FormatUtils.parseBoolean(element.getObject().getAsString());
+
+            return new Parsable<>(
+                    bool.object(),
+                    bool.throwable()
+            );
+        } catch (Exception e) {
+            return new Parsable<>(
+                    Optional.empty(),
+                    Optional.of(e)
+            );
+        }
+    }
+
+    public static Parsable<Integer> getJsonInteger(JsonObject object, String key) {
+        try {
+            Parsable<JsonElement> element = getJsonElement(object, key);
+
+            if (element.isObjectEmpty()) {
+                return new Parsable<>(
+                        Optional.empty(),
+                        Optional.of(element.getThrowable())
+                );
+            }
+
+            Parsable<Integer> integer = FormatUtils.parseInteger(element.getObject().getAsString());
+
+            return new Parsable<>(
+                    integer.object(),
+                    integer.throwable()
+            );
+        } catch (Exception e) {
+            return new Parsable<>(
+                    Optional.empty(),
+                    Optional.of(e)
+            );
+        }
+    }
+
     /**
      * Retrieves a {@link UUID} from a {@link JsonObject}, utilizing the {@link Parsable} wrapper.
      *
@@ -107,14 +183,14 @@ public class JsonUtils {
         try {
             Parsable<JsonElement> element = getJsonElement(object, key);
 
-            if (element.object().isEmpty()) {
+            if (element.isObjectEmpty()) {
                 return new Parsable<>(
                         Optional.empty(),
                         Optional.of(element.getThrowable())
                 );
             }
 
-            return FormatUtiis.parseUUID(element.getObject().getAsString());
+            return FormatUtils.parseUUID(element.getObject().getAsString());
         } catch (Exception e) {
             return new Parsable<>(
                     Optional.empty(),
