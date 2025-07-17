@@ -20,24 +20,24 @@ public class JsonUtils {
     private JsonUtils() {}
 
     /**
-     * Formats a {@link String} into a {@link JsonObject}, utilizing the {@link Parsable} wrapper.
+     * Formats a {@link String} into a {@link JsonObject}, utilizing the {@link Result} wrapper.
      * The converting is done through the {@link Gson} utility tool.
      *
      * @param string Input value to format into a {@link JsonObject}.
-     * @return A {@link Parsable} wrapper containing either the formatted result or an exception on failure.
+     * @return A {@link Result} wrapper containing either the formatted result or an exception on failure.
      * */
-    public static Parsable<JsonObject> getJsonObject(String string) {
+    public static Result<JsonObject> getJsonObject(String string) {
         try {
             if (string == null) {
                 throw new IllegalArgumentException("Unable to parse Json from an empty body.");
             }
 
-            return new Parsable<>(
+            return new Result<>(
                     Optional.of(gson.fromJson(string, JsonObject.class)),
                     Optional.empty()
             );
         } catch (Exception e) {
-            return new Parsable<>(
+            return new Result<>(
                     Optional.empty(),
                     Optional.of(e)
             );
@@ -45,13 +45,13 @@ public class JsonUtils {
     }
 
     /**
-     * Formats the request body of a {@link HttpExchange} into a {@link JsonObject}, utiliziing the {@link Parsable} wrapper.
+     * Formats the request body of a {@link HttpExchange} into a {@link JsonObject}, utiliziing the {@link Result} wrapper.
      * This methods reads the input stream from the HTTP request body, converts it to a string and attempts to parse it to a Json object.
      *
      * @param exchange The incoming {@link HttpExchange} containing the HTTP request body to parse.
-     * @return A {@link Parsable} wrapper containing either the formatted result or an exception on failure.
+     * @return A {@link Result} wrapper containing either the formatted result or an exception on failure.
      * */
-    public static Parsable<JsonObject> getJsonObject(HttpExchange exchange) {
+    public static Result<JsonObject> getJsonObject(HttpExchange exchange) {
         try (InputStream stream = exchange.getRequestBody()) {
             String body = new BufferedReader(new InputStreamReader(stream))
                     .lines()
@@ -59,7 +59,7 @@ public class JsonUtils {
 
             return getJsonObject(body);
         } catch (Exception e) {
-            return new Parsable<>(
+            return new Result<>(
                     Optional.empty(),
                     Optional.of(e)
             );
@@ -67,13 +67,13 @@ public class JsonUtils {
     }
 
     /**
-     * Retrieves a {@link JsonElement} from a {@link JsonObject}, utilizing the {@link Parsable} wrapper.
+     * Retrieves a {@link JsonElement} from a {@link JsonObject}, utilizing the {@link Result} wrapper.
      *
      * @param object The {@link JsonObject} containing the element.
      * @param key Key to retrieve {@link JsonElement} from.
-     * @return A {@link Parsable} wrapper containing either the formatted result or an exception on failure.
+     * @return A {@link Result} wrapper containing either the formatted result or an exception on failure.
      * */
-    public static Parsable<JsonElement> getJsonElement(JsonObject object, String key) {
+    public static Result<JsonElement> getJsonElement(JsonObject object, String key) {
         try {
             if (object == null) {
                 throw new IllegalArgumentException("Unable to parse from an empty body.");
@@ -85,24 +85,24 @@ public class JsonUtils {
                 throw new JsonSyntaxException("Could not find key.");
             }
 
-            return new Parsable<>(
+            return new Result<>(
                     Optional.of(element),
                     Optional.empty()
             );
         } catch (Exception e) {
-            return new Parsable<>(
+            return new Result<>(
                     Optional.empty(),
                     Optional.of(e)
             );
         }
     }
 
-    public static Parsable<BigDecimal> getJsonBigDecimal(JsonObject object, String key) {
+    public static Result<BigDecimal> getJsonBigDecimal(JsonObject object, String key) {
         try {
-            Parsable<JsonElement> element = getJsonElement(object, key);
+            Result<JsonElement> element = getJsonElement(object, key);
 
             if (element.isObjectEmpty()) {
-                return new Parsable<>(
+                return new Result<>(
                         Optional.empty(),
                         Optional.of(element.getThrowable())
                 );
@@ -110,19 +110,19 @@ public class JsonUtils {
 
             return FormatUtils.parseBigDecimal(element.getObject().getAsString());
         } catch (Exception e) {
-            return new Parsable<>(
+            return new Result<>(
                     Optional.empty(),
                     Optional.of(e)
             );
         }
     }
 
-    public static Parsable<Boolean> getJsonBoolean(JsonObject object, String key) {
+    public static Result<Boolean> getJsonBoolean(JsonObject object, String key) {
         try {
-            Parsable<JsonElement> element = getJsonElement(object, key);
+            Result<JsonElement> element = getJsonElement(object, key);
 
             if (element.isObjectEmpty()) {
-                return new Parsable<>(
+                return new Result<>(
                         Optional.empty(),
                         Optional.of(element.getThrowable())
                 );
@@ -130,19 +130,19 @@ public class JsonUtils {
 
             return FormatUtils.parseBoolean(element.getObject().getAsString());
         } catch (Exception e) {
-            return new Parsable<>(
+            return new Result<>(
                     Optional.empty(),
                     Optional.of(e)
             );
         }
     }
 
-    public static Parsable<Integer> getJsonInteger(JsonObject object, String key) {
+    public static Result<Integer> getJsonInteger(JsonObject object, String key) {
         try {
-            Parsable<JsonElement> element = getJsonElement(object, key);
+            Result<JsonElement> element = getJsonElement(object, key);
 
             if (element.isObjectEmpty()) {
-                return new Parsable<>(
+                return new Result<>(
                         Optional.empty(),
                         Optional.of(element.getThrowable())
                 );
@@ -150,30 +150,30 @@ public class JsonUtils {
 
             return FormatUtils.parseInteger(element.getObject().getAsString());
         } catch (Exception e) {
-            return new Parsable<>(
+            return new Result<>(
                     Optional.empty(),
                     Optional.of(e)
             );
         }
     }
 
-    public static Parsable<String> getJsonString(JsonObject object, String key) {
+    public static Result<String> getJsonString(JsonObject object, String key) {
         try {
-            Parsable<JsonElement> element = getJsonElement(object, key);
+            Result<JsonElement> element = getJsonElement(object, key);
 
             if (element.isObjectEmpty()) {
-                return new Parsable<>(
+                return new Result<>(
                         Optional.empty(),
                         Optional.of(element.getThrowable())
                 );
             }
 
-            return new Parsable<>(
+            return new Result<>(
                     Optional.of(element.getObject().getAsString()),
                     Optional.empty()
             );
         } catch (Exception e) {
-            return new Parsable<>(
+            return new Result<>(
                     Optional.empty(),
                     Optional.of(e)
             );
@@ -181,18 +181,18 @@ public class JsonUtils {
     }
 
     /**
-     * Retrieves a {@link UUID} from a {@link JsonObject}, utilizing the {@link Parsable} wrapper.
+     * Retrieves a {@link UUID} from a {@link JsonObject}, utilizing the {@link Result} wrapper.
      *
      * @param object The {@link JsonObject} containinig the element.
      * @param key Key to retrieve {@link JsonElement}, converted to a {@link UUID}.
-     * @return A {@link Parsable} wrapper containing either the formatted result or an exception on failure.
+     * @return A {@link Result} wrapper containing either the formatted result or an exception on failure.
      * */
-    public static Parsable<UUID> getJsonUUID(JsonObject object, String key) {
+    public static Result<UUID> getJsonUUID(JsonObject object, String key) {
         try {
-            Parsable<JsonElement> element = getJsonElement(object, key);
+            Result<JsonElement> element = getJsonElement(object, key);
 
             if (element.isObjectEmpty()) {
-                return new Parsable<>(
+                return new Result<>(
                         Optional.empty(),
                         Optional.of(element.getThrowable())
                 );
@@ -200,7 +200,7 @@ public class JsonUtils {
 
             return FormatUtils.parseUUID(element.getObject().getAsString());
         } catch (Exception e) {
-            return new Parsable<>(
+            return new Result<>(
                     Optional.empty(),
                     Optional.of(e)
             );

@@ -4,7 +4,7 @@ import com.google.gson.JsonObject;
 import com.sun.net.httpserver.HttpExchange;
 import nl.radiantrealm.library.utils.JsonUtils;
 import nl.radiantrealm.library.utils.Logger;
-import nl.radiantrealm.library.utils.Parsable;
+import nl.radiantrealm.library.utils.Result;
 
 import java.io.OutputStream;
 import java.util.Optional;
@@ -19,7 +19,7 @@ public abstract class RequestHandler {
     }
 
     public void handle(HttpExchange exchange) {
-        Parsable<JsonObject> parsable = JsonUtils.getJsonObject(exchange);
+        Result<JsonObject> parsable = JsonUtils.getJsonObject(exchange);
 
         if (parsable.object().isEmpty()) {
             JsonObject object = new JsonObject();

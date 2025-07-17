@@ -1,14 +1,12 @@
 package nl.radiantrealm.library.cache;
 
 import nl.radiantrealm.library.Main;
-import nl.radiantrealm.library.utils.Logger;
+import nl.radiantrealm.library.utils.Result;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public abstract class CacheRegistry<K, V> {
-    protected final Logger logger = Logger.getLogger(CacheRegistry.class);
-
     private final Map<K, V> dataMap = new ConcurrentHashMap<>();
     private final Map<K, Long> expiryMap = new ConcurrentHashMap<>();
 
@@ -42,7 +40,7 @@ public abstract class CacheRegistry<K, V> {
      * @return The value associated with the given key, or null if no vlaue is found.
      * @throws Exception If an error occurs during the loading process.
      * */
-    protected abstract V load(K key) throws Exception;
+    protected abstract Result<V> load(K key) throws Exception;
 
     /**
      * Loads multiple values associated with their respective keys. Subclasses must implement this method to define how the values for the specified keys are retrieved or generated.
@@ -52,7 +50,7 @@ public abstract class CacheRegistry<K, V> {
      * @throws Exception If an error occurs during the loading process.
      * @since 1.0.0
      * */
-    protected abstract Map<K, Optional<V>> load(List<K> keys) throws Exception;
+    protected abstract Map<K, Result<V>> load(List<K> keys) throws Exception;
 
     private void put(K key, V value) {
         dataMap.put(key, value);
@@ -65,28 +63,27 @@ public abstract class CacheRegistry<K, V> {
      * If the value is successfully loaded, it is stored in the cache with an expiry time.
      *
      * @param key The key for which the value needs to be retrieved. Must not be null.
-     * @return An {@link Optional} containing the value if found or successfully loaded, or {@link Optional#empty()} if the key is null or the value could not be loaded.
+     * @return An {@link Result} containing the value if found or successfully loaded, or an empty {@link Result} if the key is null or the value could not be loaded.
      * @since 1.0.0
      * */
-    public Optional<V> get(K key) {
-        if (key == null) return Optional.empty();
+    public Result<V> get(K key) {
+        if (key == null) return Result.error(new IllegalArgumentException("Invalid key."));
 
         if (dataMap.containsKey(key)) {
-            return Optional.of(dataMap.get(key));
+            return Result.ok(dataMap.get(key));
         }
 
         try {
-            V value = load(key);
+            Result<V> value = load(key);
 
-            if (value == null) {
-                return Optional.empty();
+            if (value.isObjectEmpty()) {
+                return value;
             }
 
-            put(key, value);
-            return Optional.of(value);
+            put(key, value.getObject());
+            return value;
         } catch (Exception e) {
-            logger.error(String.format("Failed to retrieve value for %s.", key), e);
-            return Optional.empty();
+            return Result.error(e);
         }
     }
 
@@ -99,7 +96,10 @@ public abstract class CacheRegistry<K, V> {
      * @param keys A list of keys for which values need to be retrieved. Must not be null or empty.
      * @return A map containing the keys and their associated values. If a key is not found or cannot be loaded, it will not appear in the map.
      * @since 1.0.0
+     *
+     * @deprecated since v1.1.3 needs rework on the Result<V> record.
      * */
+    @Deprecated
     public Map<K, Optional<V>> get(List<K> keys) {
         if (keys == null || keys.isEmpty()) return Map.of();
 
@@ -114,20 +114,20 @@ public abstract class CacheRegistry<K, V> {
             }
         }
 
-        try {
-            Map<K, Optional<V>> loadedMap = load(missingKeys);
-
-            for (Map.Entry<K, Optional<V>> entry : loadedMap.entrySet()) {
-                if (entry.getValue().isEmpty()) {
-                    result.put(entry.getKey(), Optional.empty());
-                } else {
-                    result.put(entry.getKey(), entry.getValue());
-                    put(entry.getKey(), entry.getValue().get());
-                }
-            }
-        } catch (Exception e) {
-            logger.error("Failed to load missing keys.", e);
-        }
+//        try {
+//            Map<K, Optional<V>> loadedMap = load(missingKeys);
+//
+//            for (Map.Entry<K, Optional<V>> entry : loadedMap.entrySet()) {
+//                if (entry.getValue().isEmpty()) {
+//                    result.put(entry.getKey(), Optional.empty());
+//                } else {
+//                    result.put(entry.getKey(), entry.getValue());
+//                    put(entry.getKey(), entry.getValue().get());
+//                }
+//            }
+//        } catch (Exception e) {
+//            logger.error("Failed to load missing keys.", e);
+//        }
 
         return result;
     }

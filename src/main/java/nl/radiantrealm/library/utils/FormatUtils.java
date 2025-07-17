@@ -9,33 +9,33 @@ public class FormatUtils {
     private FormatUtils() {}
 
     /**
-     * Formats a {@link String} into a {@link BigDecimal}, utilizing the {@link Parsable} wrapper.
+     * Formats a {@link String} into a {@link BigDecimal}, utilizing the {@link Result} wrapper.
      *
      * @param string Input value to format into a {@link BigDecimal}.
-     * @return A {@link Parsable} wrapper containing either the formatted result or an exception on failure.
+     * @return A {@link Result} wrapper containing either the formatted result or an exception on failure.
      * */
-    public static Parsable<BigDecimal> parseBigDecimal(String string) {
+    public static Result<BigDecimal> parseBigDecimal(String string) {
         try {
-            return new Parsable<>(
+            return new Result<>(
                     Optional.of(new BigDecimal(string)),
                     Optional.empty()
             );
         } catch (Exception e) {
-            return new Parsable<>(
+            return new Result<>(
                     Optional.empty(),
                     Optional.of(e)
             );
         }
     }
 
-    public static Parsable<Boolean> parseBoolean(String string) {
+    public static Result<Boolean> parseBoolean(String string) {
         try {
-            return new Parsable<>(
+            return new Result<>(
                     Optional.of(Boolean.parseBoolean(string)),
                     Optional.empty()
             );
         } catch (Exception e) {
-            return new Parsable<>(
+            return new Result<>(
                     Optional.empty(),
                     Optional.of(e)
             );
@@ -43,19 +43,19 @@ public class FormatUtils {
     }
 
     /**
-     * Formats a {@link String} into a {@link Integer}, utilizing the {@link Parsable} wrapper.
+     * Formats a {@link String} into a {@link Integer}, utilizing the {@link Result} wrapper.
      *
      * @param string Input value to format into a {@link Integer}.
-     * @return A {@link Parsable} wrapper containing either the formatted result or an exception on failure.
+     * @return A {@link Result} wrapper containing either the formatted result or an exception on failure.
      * */
-    public static Parsable<Integer> parseInteger(String string) {
+    public static Result<Integer> parseInteger(String string) {
         try {
-            return new Parsable<>(
+            return new Result<>(
                     Optional.of(Integer.valueOf(string)),
                     Optional.empty()
             );
         } catch (Exception e) {
-            return new Parsable<>(
+            return new Result<>(
                     Optional.empty(),
                     Optional.of(e)
             );
@@ -63,19 +63,19 @@ public class FormatUtils {
     }
 
     /**
-     * Formats a {@link String} into a {@link UUID}, utilizing the {@link Parsable} wrapper.
+     * Formats a {@link String} into a {@link UUID}, utilizing the {@link Result} wrapper.
      *
      * @param string Input value to format into a {@link UUID}.
-     * @return A {@link Parsable} wrapper containing either the formatted result or an exception on failure.
+     * @return A {@link Result} wrapper containing either the formatted result or an exception on failure.
      * */
-    public static Parsable<UUID> parseUUID(String string) {
+    public static Result<UUID> parseUUID(String string) {
         try {
-            return new Parsable<>(
+            return new Result<>(
                     Optional.of(UUID.fromString(string)),
                     Optional.empty()
             );
         } catch (Exception e) {
-            return new Parsable<>(
+            return new Result<>(
                     Optional.empty(),
                     Optional.of(e)
             );
