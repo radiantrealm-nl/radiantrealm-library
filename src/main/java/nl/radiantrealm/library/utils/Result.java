@@ -2,7 +2,9 @@ package nl.radiantrealm.library.utils;
 
 import java.util.Optional;
 
-public record Parsable<T>(Optional<T> object, Optional<Throwable> throwable) {
+public record Result<T>(Optional<T> object, Optional<Throwable> throwable) {
+
+
 
     public T getObject() {
         return object.orElse(null);
@@ -15,4 +17,5 @@ public record Parsable<T>(Optional<T> object, Optional<Throwable> throwable) {
     public boolean isObjectEmpty() {
         return object.isEmpty();
     }
+
 }
