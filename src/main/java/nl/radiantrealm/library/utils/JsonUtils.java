@@ -108,12 +108,7 @@ public class JsonUtils {
                 );
             }
 
-            Parsable<BigDecimal> decimal = FormatUtils.parseBigDecimal(element.getObject().getAsString());
-
-            return new Parsable<>(
-                    decimal.object(),
-                    decimal.throwable()
-            );
+            return FormatUtils.parseBigDecimal(element.getObject().getAsString());
         } catch (Exception e) {
             return new Parsable<>(
                     Optional.empty(),
@@ -133,12 +128,7 @@ public class JsonUtils {
                 );
             }
 
-            Parsable<Boolean> bool = FormatUtils.parseBoolean(element.getObject().getAsString());
-
-            return new Parsable<>(
-                    bool.object(),
-                    bool.throwable()
-            );
+            return FormatUtils.parseBoolean(element.getObject().getAsString());
         } catch (Exception e) {
             return new Parsable<>(
                     Optional.empty(),
@@ -158,11 +148,29 @@ public class JsonUtils {
                 );
             }
 
-            Parsable<Integer> integer = FormatUtils.parseInteger(element.getObject().getAsString());
+            return FormatUtils.parseInteger(element.getObject().getAsString());
+        } catch (Exception e) {
+            return new Parsable<>(
+                    Optional.empty(),
+                    Optional.of(e)
+            );
+        }
+    }
+
+    public static Parsable<String> getJsonString(JsonObject object, String key) {
+        try {
+            Parsable<JsonElement> element = getJsonElement(object, key);
+
+            if (element.isObjectEmpty()) {
+                return new Parsable<>(
+                        Optional.empty(),
+                        Optional.of(element.getThrowable())
+                );
+            }
 
             return new Parsable<>(
-                    integer.object(),
-                    integer.throwable()
+                    Optional.of(element.getObject().getAsString()),
+                    Optional.empty()
             );
         } catch (Exception e) {
             return new Parsable<>(
