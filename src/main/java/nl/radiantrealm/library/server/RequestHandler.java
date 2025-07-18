@@ -24,12 +24,12 @@ public abstract class RequestHandler {
         if (parsable.object().isEmpty()) {
             JsonObject object = new JsonObject();
             object.addProperty("error", parsable.getThrowable().getMessage());
-            sendResponse(exchange, new Response(400, Optional.of(object)));
+            sendResponse(exchange, new ApiResponse(400, Optional.of(object)));
             return;
         }
 
         try {
-            Response response = handle(new Request(
+            ApiResponse response = handle(new ApiRequest(
                     exchange.getRequestMethod(),
                     parsable.object()
             ));
@@ -40,13 +40,13 @@ public abstract class RequestHandler {
                 logger.debug("Unexpected error.", e);
             }
 
-            sendResponse(exchange, new Response(500, Optional.empty()));
+            sendResponse(exchange, new ApiResponse(500, Optional.empty()));
         }
     }
 
-    protected abstract Response handle(Request request) throws Exception;
+    protected abstract ApiResponse handle(ApiRequest request) throws Exception;
 
-    private void sendResponse(HttpExchange exchange, Response response) {
+    private void sendResponse(HttpExchange exchange, ApiResponse response) {
         JsonObject object = response.object().orElse(new JsonObject());
 
         try (exchange) {
