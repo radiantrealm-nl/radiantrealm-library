@@ -1,5 +1,6 @@
 package nl.radiantrealm.library.processor;
 
-public interface ProcessHandler<IN, OUT> {
-    ProcessResult<OUT> handle(ProcessRequest<IN> request) throws Exception;
+public abstract class ProcessHandler<T> {
+
+    protected abstract ProcessResult handle(ProcessRequest<T> request);
 }

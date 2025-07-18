@@ -13,7 +13,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 public abstract class ProcessController {
     protected static final Map<Integer, ProcessRequest<?>> processMap = new ConcurrentHashMap<>();
-    protected static final Map<Integer, ProcessResultListener<?>> listenerMap = new ConcurrentHashMap<>();
+    protected static final Map<Integer, ProcessResultListener> listenerMap = new ConcurrentHashMap<>();
 
     protected static final ReentrantLock lock = new ReentrantLock();
 
@@ -44,7 +44,7 @@ public abstract class ProcessController {
         ProcessController.allowIncoming.set(allowIncoming);
     }
 
-    public static <IN, OUT> boolean createProcess(ProcessHandler<IN, OUT> handler, ProcessResultListener<OUT> listener) {
+    public static <T> boolean createProcess(ProcessHandler<T> handler, ProcessResultListener listener) {
         if (!allowIncoming.get()) {
             return false;
         }

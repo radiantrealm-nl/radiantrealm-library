@@ -1,18 +1,27 @@
 package nl.radiantrealm.library.processor;
 
+import com.google.gson.JsonObject;
+
+import java.util.Map;
 import java.util.Optional;
 
-public record ProcessResult<T>(Optional<T> object, Optional<Throwable> throwable) {
+public record ProcessResult(boolean success, Optional<JsonObject> object, Optional<Throwable> throwable) {
 
-    public static <T> ProcessResult<T> success(T object) {
-        return new ProcessResult<>(Optional.of(object), Optional.empty());
+    public static ProcessResult ok() {
+        return new ProcessResult(true, Optional.empty(), Optional.empty());
     }
 
-    public static <T> ProcessResult<T> failure(Throwable throwable) {
-        return new ProcessResult<>(Optional.empty(), Optional.of(throwable));
+    public static ProcessResult ok(Map<String, String> map) {
+        JsonObject jsonObject = new JsonObject();
+        map.forEach(jsonObject::addProperty);
+        return new ProcessResult(true, Optional.of(jsonObject), Optional.empty());
     }
 
-    public T getObject() {
+    public static ProcessResult failure(Throwable throwable) {
+        return new ProcessResult(false, Optional.empty(), Optional.of(throwable));
+    }
+
+    public JsonObject getJsonObject() {
         return object.orElse(null);
     }
 
