@@ -6,7 +6,7 @@
 
     <groupId>nl.radiantrealm.library</groupId>
     <artifactId>radiantrealm-library</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.1</version>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -43,6 +43,13 @@
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
             <version>6.3.0</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
+            <version>26.0.1</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 
