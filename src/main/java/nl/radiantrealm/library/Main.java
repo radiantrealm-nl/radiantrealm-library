@@ -4,7 +4,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class Main {
+public class Main extends ApplicationController {
+
+    public Main() {
+        super(8779);
+    }
+
+    @Override
+    protected void services() {
+    }
+
     private static final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
 
     public static void main(String[] args) {
