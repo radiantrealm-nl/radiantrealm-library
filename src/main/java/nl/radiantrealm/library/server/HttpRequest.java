@@ -12,24 +12,11 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
-public class HttpRequest {
-    private final HttpExchange exchange;
-    private final boolean keepAlive;
+public record HttpRequest(HttpExchange exchange, boolean keepAlive) {
 
-    private final InputStream inputStream;
-    private final OutputStream outputStream;
-
-    public HttpRequest(HttpExchange exchange, boolean keepAlive) {
-        this.exchange = exchange;
-        this.keepAlive = keepAlive;
-
-        this.inputStream = exchange.getRequestBody();
-        this.outputStream = exchange.getResponseBody();
-    }
-
-    public String getRequestBody() {
+    public String getRequestBody(InputStream stream) {
         try {
-            return new BufferedReader(new InputStreamReader(inputStream))
+            return new BufferedReader(new InputStreamReader(stream))
                     .lines()
                     .collect(Collectors.joining("\n"));
         } finally {
