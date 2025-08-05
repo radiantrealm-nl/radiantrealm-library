@@ -8,21 +8,22 @@ import java.net.InetSocketAddress;
 
 public abstract class ApplicationRouter {
     private static final Logger logger = Logger.getLogger(ApplicationRouter.class);
-    private static HttpServer server;
+    private final HttpServer server;
 
     public ApplicationRouter(int port) {
+        this.server = createHttpServer(port);
+    }
+
+    private HttpServer createHttpServer(int port) {
         try {
-            server = HttpServer.create(new InetSocketAddress(port), 0);
+            return HttpServer.create(new InetSocketAddress(port), 0);
         } catch (Exception e) {
-            logger.error(String.format("Failed to create HttpServer at %s.", port), e);
+            logger.error(String.format("Failed to setup HttpServer at port %d", port), e);
+            return null;
         }
     }
 
-    protected void createAPIHandler(String path, HttpHandler handler) {
+    protected void register(String path, HttpHandler handler) {
         server.createContext(path, handler);
-    }
-
-    protected void createAPIHandler(String path, RequestHandler handler) {
-        createAPIHandler(path, handler::handle);
     }
 }
