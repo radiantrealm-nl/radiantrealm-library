@@ -27,7 +27,7 @@ public abstract class ApplicationRouter {
             try {
                 handler.handle(new HttpRequest(exchange));
             } catch (Exception e) {
-                logger.error(String.format("Failed to handle %s.", handler.getClass().getSimpleName()), e);
+                logger.error(String.format("Unexpected exception in %s.", handler.getClass().getSimpleName()), e);
             }
         });
     }
