@@ -12,35 +12,32 @@ import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.stream.Collectors;
 
-public record HttpRequest(HttpExchange exchange, boolean keepAlive) {
+public record HttpRequest(HttpExchange exchange) implements AutoCloseable {
+
+    @Override
+    public void close() {
+        exchange.close();
+    }
 
     public String getRequestBody(InputStream stream) {
-        try {
-            return new BufferedReader(new InputStreamReader(stream))
-                    .lines()
-                    .collect(Collectors.joining("\n"));
-        } finally {
-            if (!keepAlive) {
-                exchange.close();
-            }
-        }
+        return new BufferedReader(new InputStreamReader(stream))
+                .lines()
+                .collect(Collectors.joining("\n"));
+    }
+
+    public String getRequestBody() {
+        return getRequestBody(exchange.getRequestBody());
     }
 
     public void sendResponse(int statusCode, String mimeType, String body) throws Exception {
         byte[] bytes = body.getBytes(StandardCharsets.UTF_8);
 
-        try {
-            setResponseHeader("Content-Type", mimeType);
-            exchange.sendResponseHeaders(statusCode, bytes.length);
+        setResponseHeader("Content-Type", mimeType);
+        exchange.sendResponseHeaders(statusCode, bytes.length);
 
-            OutputStream stream = exchange.getResponseBody();
-            stream.write(bytes);
-            stream.close();
-        } finally {
-            if (!keepAlive) {
-                exchange.close();
-            }
-        }
+        OutputStream stream = exchange.getResponseBody();
+        stream.write(bytes);
+        stream.close();
     }
 
     public void sendResponse(StatusCode statusCode, MimeType mimeType, String body) throws Exception {
@@ -49,6 +46,16 @@ public record HttpRequest(HttpExchange exchange, boolean keepAlive) {
 
     public void sendResponse(StatusCode statusCode, JsonObject object) throws Exception {
         sendResponse(statusCode, MimeType.JSON, object.toString());
+    }
+
+    public void sendStatusResponse(StatusCode statusCode, String key, String value) throws Exception {
+        JsonObject object = new JsonObject();
+        object.addProperty(key, value);
+        sendResponse(statusCode, object);
+    }
+
+    public void sendStatusResponse(StatusCode statusCode) throws Exception {
+        sendStatusResponse(statusCode, statusCode.getKeyType(), statusCode.getMessage());
     }
 
     public void setResponseHeader(String key, String value) {
