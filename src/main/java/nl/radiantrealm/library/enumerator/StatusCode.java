@@ -1,43 +1,69 @@
 package nl.radiantrealm.library.enumerator;
 
 public enum StatusCode {
-    CONTINUE(100),
-    SWITCHING_PROTOCOLS(101),
-    PROCESSING(102),
+    CONTINUE(100, null),
+    SWITCHING_PROTOCOLS(101, null),
+    PROCESSING(102, null),
 
-    OK(200),
-    CREATED(201),
-    ACCEPTED(202),
-    NO_CONTENT(204),
-    PARTIAL_CONTENT(206),
+    OK(200, "Ok."),
+    CREATED(201, "Created."),
+    ACCEPTED(202, "Accepted."),
+    NO_CONTENT(204, null),
+    PARTIAL_CONTENT(206, "Partial_content."),
 
-    MOVED_PERMANENTLY(301),
-    FOUND(302),
-    NOT_MODIFIED(304),
-    TEMPORARY_REDIRECT(307),
-    PERMANENT_REDIRECT(308),
+    MOVED_PERMANENTLY(301, "Permanently moved."),
+    FOUND(302, "Found."),
+    NOT_MODIFIED(304, null),
+    TEMPORARY_REDIRECT(307, "Temporary redirect."),
+    PERMANENT_REDIRECT(308, "Permanent redirect."),
 
-    BAD_REQUEST(400),
-    UNAUTHORIZED(401),
-    FORBIDDEN(403),
-    NOT_FOUND(404),
-    INVALID_METHOD(405),
-    CONFLICT(409),
-    REQUEST_TIMEOUT(429),
+    BAD_REQUEST(400, "Bad request body."),
+    UNAUTHORIZED(401, "Insufficient permissions."),
+    FORBIDDEN(403, "No access."),
+    NOT_FOUND(404, "The request resource was not found."),
+    INVALID_METHOD(405, "Invalid request method."),
+    CONFLICT(409, "Conflicting request body."),
+    REQUEST_TIMEOUT(429, "Too many requests."),
 
-    SERVER_ERROR(500),
-    NOT_IMPLEMENTED(501),
-    BAD_GATEWAY(502),
-    SERVICE_UNAVAILABLE(503),
-    GATEWAY_TIMEOUT(504);
+    SERVER_ERROR(500, "A server error ocurred."),
+    NOT_IMPLEMENTED(501, "Method not implemented."),
+    BAD_GATEWAY(502, "Bad gateway."),
+    SERVICE_UNAVAILABLE(503, "Service not available."),
+    GATEWAY_TIMEOUT(504, "Gateway timeout.");
 
     private final int code;
+    private final String message;
 
-    StatusCode(int code) {
+    StatusCode(int code, String message) {
         this.code = code;
+        this.message = message;
     }
 
     public int getCode() {
         return code;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public String getKeyType() {
+        if (message == null) {
+            return null;
+        }
+
+        if (code >= 200 && code < 300) {
+            return "message";
+        }
+
+        if (code >= 300 && code < 400) {
+            return "redirect";
+        }
+
+        if (code >= 400 && code < 600) {
+            return "error";
+        }
+
+        return "info";
     }
 }
