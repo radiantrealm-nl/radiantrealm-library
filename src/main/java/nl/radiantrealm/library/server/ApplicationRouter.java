@@ -1,8 +1,6 @@
 package nl.radiantrealm.library.server;
 
-import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import nl.radiantrealm.library.enumerator.PlayerAccountAPI;
 import nl.radiantrealm.library.utils.Logger;
 
 import java.net.InetSocketAddress;
@@ -27,7 +25,7 @@ public abstract class ApplicationRouter {
     protected void register(String path, RequestHandler handler) {
         server.createContext(path, exchange -> {
             try {
-                handler.handle(new HttpRequest(exchange, true));
+                handler.handle(new HttpRequest(exchange));
             } catch (Exception e) {
                 logger.error(String.format("Failed to handle %s.", handler.getClass().getSimpleName()), e);
             }
