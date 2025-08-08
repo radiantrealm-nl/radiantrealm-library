@@ -17,4 +17,14 @@ public enum WsopCode {
     public int getCode() {
         return code;
     }
+
+    public static WsopCode getWsop(int integer) {
+        for (WsopCode wsopCode : WsopCode.values()) {
+            if (wsopCode.code == integer) {
+                return wsopCode;
+            }
+        }
+
+        return null;
+    }
 }
