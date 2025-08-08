@@ -3,7 +3,11 @@ package nl.radiantrealm.library.utils;
 public class ByteUtils {
 
     public static boolean getBit(byte value, int index) {
-        return ((value >> index) & 1) == 1;
+        return (value & index) != 0;
+    }
+
+    public static int readBits(byte value, int index) {
+        return (value & index);
     }
 
     public static Byte setBit(byte value, int index, boolean state) {
@@ -12,11 +16,6 @@ public class ByteUtils {
         } else {
             return (byte) (value & ~(1 << index));
         }
-    }
-
-    public static int readBits(byte value, int startBit, int length) {
-        int mask = (1 << length) - 1; // bijv. length=4 → mask=0b1111
-        return (value >> startBit) & mask;
     }
 
     public static int combineBytes(byte... bytes) {
