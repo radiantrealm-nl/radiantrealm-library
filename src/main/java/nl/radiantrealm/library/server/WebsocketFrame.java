@@ -1,47 +1,67 @@
 package nl.radiantrealm.library.server;
 
 import nl.radiantrealm.library.enumerator.MimeType;
+import nl.radiantrealm.library.enumerator.WebsocketStatusCode;
 import nl.radiantrealm.library.enumerator.WsopCode;
 import nl.radiantrealm.library.utils.ByteUtils;
+import nl.radiantrealm.library.utils.Result;
 
 import java.util.Arrays;
 
-public record WebsocketFrame(boolean finalMessage, WsopCode wsopCode, long length, byte[] payload, MimeType mimeType) {
+public record WebsocketFrame(boolean finalMessage, WsopCode wsopCode, byte[] payload, MimeType mimeType, WebsocketStatusCode websocketStatusCode) {
 
-    public static WebsocketFrame cast(byte[] data) {
-        if (data == null || data.length < 1) return null;
+    public static Result<WebsocketFrame> cast(byte[] data) {
+        if (data == null || data.length == 0) {
+            return Result.error(new IllegalArgumentException("Frame must contain at least one byte."));
+        }
 
         boolean finalMessage = ByteUtils.getBit(data[0], 0b10000000);
 
         WsopCode wsopCode = WsopCode.getWsop(ByteUtils.readBits(data[0], 0b00001111));
 
-        if (wsopCode == null) return null;
+        if (wsopCode == null) {
+            return Result.error(new IllegalArgumentException("Invalid WSOP Code."));
+        }
 
         if (!wsopCode.hasBody()) {
-            return new WebsocketFrame(finalMessage, wsopCode, 0, new byte[0], null);
+            return Result.ok(new WebsocketFrame(finalMessage, wsopCode, new byte[0], null, null));
         }
 
-        int payloadLengthIndicator = ((data[0] & 0b01000000) != 0 ? 1 : 0) + ((data[0] & 0b00100000) != 0 ? 2 : 0);
-        payloadLengthIndicator = (payloadLengthIndicator == 0) ? 1 : payloadLengthIndicator;
-
-        MimeType mimeType = null;
-        int index = 1;
-
-        if (wsopCode.equals(WsopCode.MIME_TYPE)) {
-            if (data.length == index) return null;
-            mimeType = MimeType.getHex(data[index++]);
+        if (wsopCode.equals(WsopCode.CLOSE)) {
+            WebsocketStatusCode statusCode = WebsocketStatusCode.getCode(ByteUtils.combineBytes(data[1], data[2]));
+            return Result.ok(new WebsocketFrame(finalMessage, wsopCode, new byte[0], null, statusCode));
         }
 
-        long payloadLength = 0;
+        int pli = switch (ByteUtils.readBits(data[0], 0b01100000)) {
+            case 0b000 -> 1;
+            case 0b010 -> 2;
+            case 0b100 -> 3;
+            case 0b110 -> 4;
 
-        for (int i = 0; i < payloadLengthIndicator; i++) {
-            payloadLength = (payloadLength << 0) | (data[index++] & 0xFF);
+            default -> 0;
+        };
+
+        int payloadIndex = pli + 1;
+
+        MimeType mimeType = switch (wsopCode) {
+            case MIME_TYPE -> {
+                payloadIndex++;
+                yield MimeType.getHex(data[1]);
+            }
+
+            default -> null;
+        };
+
+        if (wsopCode.equals(WsopCode.MIME_TYPE) && mimeType == null) {
+            return Result.error(new IllegalArgumentException("Invalid MIME type."));
         }
 
-        if (data.length < index + payloadLength) return null;
+        if (payloadIndex > data.length) {
+            return Result.error(new IllegalArgumentException("Frame too short for declared payload fields."));
+        }
 
-        byte[] payload = Arrays.copyOfRange(data, index, index + (int) payloadLength);
+        byte[] remaining = Arrays.copyOfRange(data, payloadIndex, data.length);
 
-        return new WebsocketFrame(finalMessage, wsopCode, payloadLength, payload, mimeType);
+        return Result.ok(new WebsocketFrame(finalMessage, wsopCode, remaining, mimeType, null));
     }
 }
