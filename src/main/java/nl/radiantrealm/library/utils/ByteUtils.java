@@ -1,5 +1,7 @@
 package nl.radiantrealm.library.utils;
 
+import java.util.Arrays;
+
 public class ByteUtils {
 
     public static boolean getBit(byte value, int index) {
@@ -20,9 +22,21 @@ public class ByteUtils {
 
     public static int combineBytes(byte... bytes) {
         int result = 0;
+
         for (byte b : bytes) {
             result = (result << 8) | (b & 0xFF);
         }
+
+        return result;
+    }
+
+    public static long combineBytesLong(byte... bytes) {
+        long result = 0;
+
+        for (byte b : bytes) {
+            result = (result << 8) | (b & 0xFF);
+        }
+
         return result;
     }
 }
