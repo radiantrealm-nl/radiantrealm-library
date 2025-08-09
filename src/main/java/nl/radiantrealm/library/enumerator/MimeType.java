@@ -1,5 +1,9 @@
 package nl.radiantrealm.library.enumerator;
 
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+
 public enum MimeType {
     TEXT("text/plain", 0x01),
     HTML("text/html", 0x02),
@@ -27,6 +31,14 @@ public enum MimeType {
     private final String type;
     private final int hex;
 
+    private static final Map<Integer, MimeType> map = new HashMap<>();
+
+    static {
+        Arrays.asList(MimeType.values()).forEach(key -> {
+            map.put(key.hex, key);
+        });
+    }
+
     MimeType(String type, int hex) {
         this.type = type;
         this.hex = hex;
@@ -41,12 +53,6 @@ public enum MimeType {
     }
 
     public static MimeType getHex(int hex) {
-        for (MimeType mimeType : MimeType.values()) {
-            if (mimeType.hex == hex) {
-                return mimeType;
-            }
-        }
-
-        return null;
+        return map.get(hex);
     }
 }
