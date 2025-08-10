@@ -1,47 +1,36 @@
 package nl.radiantrealm.library.enumerator;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
-
 public enum MimeType {
-    TEXT("text/plain", 0x01),
-    HTML("text/html", 0x02),
-    CSS("text/css", 0x03),
-    JS("text/js", 0x04),
-
-    JSON("application/json", 0x05),
-    XML("application/xml", 0x06),
-    PDF("application/pdf", 0x07),
-    ZIP("application/zip", 0x08),
-    BINARY("application/octet-stream", 0x09),
-
-    JPEG("image/jpeg", 0x0A),
-    PNG("image/png", 0x0B),
-    GIF("image/gif", 0x0C),
-    SVG("image/svg+xml", 0x0D),
-
-    MP3("audio/mpeg", 0x0E),
-    OGG("audio/ogg", 0x0F),
-    WAV("audio/wav", 0x10),
-
-    MP4("video/mp4", 0x11),
-    WEBM("video/webm", 0x12);
-
     private final String type;
     private final int hex;
 
-    private static final Map<Integer, MimeType> map = new HashMap<>();
+    TEXT("text/plain"),
+    HTML("text/html"),
+    CSS("text/css"),
+    JS("text/js"),
 
-    static {
-        Arrays.asList(MimeType.values()).forEach(key -> {
-            map.put(key.hex, key);
-        });
-    }
+    JSON("application/json"),
+    XML("application/xml"),
+    PDF("application/pdf"),
+    ZIP("application/zip"),
+    BINARY("application/octet-stream"),
 
-    MimeType(String type, int hex) {
+    JPEG("image/jpeg"),
+    PNG("image/png"),
+    GIF("image/gif"),
+    SVG("image/svg+xml"),
+
+    MP3("audio/mpeg"),
+    OGG("audio/ogg"),
+    WAV("audio/wav"),
+
+    MP4("video/mp4"),
+    WEBM("video/webm");
+
+    public final String type;
+
+    MimeType(String type) {
         this.type = type;
-        this.hex = hex;
     }
 
     public String getType() {
