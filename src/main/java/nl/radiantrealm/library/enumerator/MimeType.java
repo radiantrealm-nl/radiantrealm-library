@@ -1,9 +1,6 @@
 package nl.radiantrealm.library.enumerator;
 
 public enum MimeType {
-    private final String type;
-    private final int hex;
-
     TEXT("text/plain"),
     HTML("text/html"),
     CSS("text/css"),
@@ -35,13 +32,5 @@ public enum MimeType {
 
     public String getType() {
         return type;
-    }
-
-    public int getHex() {
-        return hex;
-    }
-
-    public static MimeType getHex(int hex) {
-        return map.get(hex);
     }
 }

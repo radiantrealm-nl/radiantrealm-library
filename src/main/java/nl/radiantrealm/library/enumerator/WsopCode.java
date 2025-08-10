@@ -4,9 +4,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum WsopCode {
-    private final int code;
-    private final boolean hasBody;
-
     CONTINUATION(0x00),
     TEXT_UTF8(0x01),
     BINARY(0x02),
@@ -15,17 +12,11 @@ public enum WsopCode {
     PING(0x09),
     PONG(0x0A),
 
-    public int getCode() {
-        return code;
-    }
     MIME_TEXT(0x10, MimeType.TEXT),
     MIME_HTML(0x11, MimeType.HTML),
     MIME_CSS(0x12, MimeType.CSS),
     MIME_JS(0x13, MimeType.JS),
 
-    public boolean hasBody() {
-        return hasBody;
-    }
     MIME_JSON(0x14, MimeType.JSON),
     MIME_XML(0x15, MimeType.XML),
     MIME_PDF(0x16, MimeType.PDF),

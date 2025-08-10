@@ -1,6 +1,5 @@
 package nl.radiantrealm.library.enumerator;
 
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -21,28 +20,20 @@ public enum WebsocketStatusCode {
 
     TLS_FAILURE(1015, false);
 
-    private final int code;
-    private final boolean isCloseFrame;
+    public final int code;
+    public final boolean isCloseFrame;
 
     private static final Map<Integer, WebsocketStatusCode> map = new HashMap<>();
 
     static {
-        Arrays.asList(WebsocketStatusCode.values()).forEach(key -> {
-            map.put(key.code, key);
-        });
+        for (WebsocketStatusCode statusCode : WebsocketStatusCode.values()) {
+            map.put(statusCode.code, statusCode);
+        }
     }
 
     WebsocketStatusCode(int code, boolean isCloseFrame) {
         this.code = code;
         this.isCloseFrame = isCloseFrame;
-    }
-
-    public int getCode() {
-        return code;
-    }
-
-    public boolean isCloseFrame() {
-        return isCloseFrame;
     }
 
     public static WebsocketStatusCode getCode(int code) {
