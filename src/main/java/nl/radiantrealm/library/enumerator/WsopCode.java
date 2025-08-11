@@ -7,7 +7,6 @@ public enum WsopCode {
     CONTINUATION(0x00),
     TEXT_UTF8(0x01),
     BINARY(0x02),
-    MIME_TYPE(0x03),
     CLOSE(0x08),
     PING(0x09),
     PONG(0x0A),
