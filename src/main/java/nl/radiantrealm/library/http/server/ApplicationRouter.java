@@ -1,6 +1,8 @@
-package nl.radiantrealm.library.server;
+package nl.radiantrealm.library.http.server;
 
 import com.sun.net.httpserver.HttpServer;
+import nl.radiantrealm.library.http.HttpRequest;
+import nl.radiantrealm.library.http.RequestHandler;
 import nl.radiantrealm.library.utils.Logger;
 
 import java.net.InetSocketAddress;

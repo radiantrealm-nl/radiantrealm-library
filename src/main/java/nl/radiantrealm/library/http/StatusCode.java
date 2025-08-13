@@ -1,4 +1,4 @@
-package nl.radiantrealm.library.enumerator;
+package nl.radiantrealm.library.http;
 
 public enum StatusCode {
     CONTINUE(100, null),
