@@ -23,14 +23,12 @@ public record HttpRequest(HttpExchange exchange, InputStream inputStream, Output
     }
 
     public String getRequestBody() {
-        return new BufferedReader(new InputStreamReader(exchange.getRequestBody()))
+        return new BufferedReader(new InputStreamReader(inputStream))
                 .lines()
                 .collect(Collectors.joining("\n"));
     }
 
     public void sendResponse(int statusCode, String mimeType, String body) throws Exception {
-        OutputStream stream = exchange.getResponseBody();
-
         if (body == null) {
             exchange.sendResponseHeaders(statusCode, -1);
         } else {
@@ -38,7 +36,7 @@ public record HttpRequest(HttpExchange exchange, InputStream inputStream, Output
 
             setResponseHeaders("Content-Type", mimeType);
             exchange.sendResponseHeaders(statusCode, bytes.length);
-            stream.write(bytes);
+            outputStream.write(bytes);
         }
     }
 
