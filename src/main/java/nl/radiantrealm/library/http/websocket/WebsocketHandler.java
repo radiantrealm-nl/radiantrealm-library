@@ -1,23 +1,68 @@
 package nl.radiantrealm.library.http.websocket;
 
 import com.sun.net.httpserver.HttpExchange;
+import nl.radiantrealm.library.ApplicationService;
 import nl.radiantrealm.library.http.WsopCode;
 import nl.radiantrealm.library.utils.ByteUtils;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 
-public abstract class WebsocketHandler {
+public abstract class WebsocketHandler implements ApplicationService {
     private final InputStream inputStream;
     private final OutputStream outputStream;
+    private final Thread thread;
+    private boolean isOpen;
 
     public WebsocketHandler(HttpExchange exchange) {
         WebsocketSession session = new WebsocketSession(exchange);
         this.inputStream = session.inputStream();
         this.outputStream = session.outputStream();
+        this.isOpen = false;
+
+        thread = new Thread(() -> {
+            try {
+                while (isOpen) {
+                    if (inputStream.available() < 1) {
+                        Thread.sleep(10);
+                        continue;
+                    }
+
+                    List<WebsocketFrame> websocketFrameList = new ArrayList<>();
+
+                    for (int i = 0; i < 2; i++) {
+                        WebsocketFrame websocketFrame = readFrame();
+
+                        if (!websocketFrame.finalMessage()) {
+                            i--;
+                        }
+
+                        websocketFrameList.add(websocketFrame);
+                    }
+
+                    WebsocketFrame websocketFrame = WebsocketFrame.merge(websocketFrameList.toArray(new WebsocketFrame[0]));
+                    onFrame(websocketFrame);
+                }
+            } catch (Exception e) {
+                //Grote oei, log of onFrame met lege socket?
+            }
+        });
     }
 
     protected abstract void onFrame(WebsocketFrame websocketFrame);
+
+    @Override
+    public void start() throws Exception {
+        this.isOpen = true;
+        thread.start();
+    }
+
+    @Override
+    public void stop() throws Exception {
+        this.isOpen = false;
+    }
 
     protected WebsocketFrame readFrame() throws Exception {
         byte[] headerBytes = inputStream.readNBytes(2);
