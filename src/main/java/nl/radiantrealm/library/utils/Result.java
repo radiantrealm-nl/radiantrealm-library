@@ -12,6 +12,26 @@ public record Result<T>(Optional<T> object, Optional<Throwable> throwable) {
         return new Result<>(Optional.empty(), Optional.of(throwable));
     }
 
+    public static <T> Result<T> tryCatch(ThrowingFunction<T> throwingFunction) {
+        try {
+            return Result.ok(throwingFunction.apply());
+        } catch (Exception e) {
+            return Result.error(e);
+        }
+    }
+
+    public static <T> Result<T> tryWithResources(AutoCloseable autoCloseable, ThrowingFunction<T> throwingFunction) {
+        try (autoCloseable) {
+            return tryCatch(throwingFunction);
+        } catch (Exception e) {
+            return Result.error(e);
+        }
+    }
+
+    public interface ThrowingFunction<R> {
+        R apply() throws Exception;
+    }
+
     public T getObject() {
         return object.orElse(null);
     }

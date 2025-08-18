@@ -45,28 +45,6 @@ public class JsonUtils {
     }
 
     /**
-     * Formats the request body of a {@link HttpExchange} into a {@link JsonObject}, utiliziing the {@link Result} wrapper.
-     * This methods reads the input stream from the HTTP request body, converts it to a string and attempts to parse it to a Json object.
-     *
-     * @param exchange The incoming {@link HttpExchange} containing the HTTP request body to parse.
-     * @return A {@link Result} wrapper containing either the formatted result or an exception on failure.
-     * */
-    public static Result<JsonObject> getJsonObject(HttpExchange exchange) {
-        try (InputStream stream = exchange.getRequestBody()) {
-            String body = new BufferedReader(new InputStreamReader(stream))
-                    .lines()
-                    .collect(Collectors.joining("\n"));
-
-            return getJsonObject(body);
-        } catch (Exception e) {
-            return new Result<>(
-                    Optional.empty(),
-                    Optional.of(e)
-            );
-        }
-    }
-
-    /**
      * Retrieves a {@link JsonElement} from a {@link JsonObject}, utilizing the {@link Result} wrapper.
      *
      * @param object The {@link JsonObject} containing the element.
