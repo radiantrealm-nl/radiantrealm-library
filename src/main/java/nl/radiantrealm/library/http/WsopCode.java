@@ -1,5 +1,8 @@
 package nl.radiantrealm.library.http;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public enum WsopCode {
     CONTINUATION(0x00),
     CLOSE(0x08),
@@ -32,6 +35,8 @@ public enum WsopCode {
     public final int code;
     public final MimeType mimeType;
 
+    private static final Map<Integer, WsopCode> map = new HashMap<>();
+
     WsopCode(int code) {
         this(code, null);
     }
@@ -39,6 +44,10 @@ public enum WsopCode {
     WsopCode(int code, MimeType mimeType) {
         this.code = code;
         this.mimeType = mimeType;
+    }
+
+    public static WsopCode valueOf(int code) {
+        return map.get(code);
     }
 
     public boolean isMimeType() {
