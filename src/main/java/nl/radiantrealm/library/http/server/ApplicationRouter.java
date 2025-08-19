@@ -76,8 +76,6 @@ public abstract class ApplicationRouter {
             handler.setResponseHeaders("Sec-Websocket-Accept", websocketKey);
 
             handler.sendStatusResponse(StatusCode.SWITCHING_PROTOCOLS);
-
-            websocketHandler.handle(handler.inputStream(), handler.outputStream());
         });
     }
 }
