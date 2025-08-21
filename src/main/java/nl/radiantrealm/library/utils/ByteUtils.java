@@ -24,6 +24,16 @@ public class ByteUtils {
         return result;
     }
 
+    public static int combineBytesInt(byte... bytes) {
+        int result = 0;
+
+        for (byte b : bytes) {
+            result = (result << 8) | (b & 0xFF);
+        }
+
+        return result;
+    }
+
     public static long combineBytesLong(byte... bytes) {
         long result = 0;
 
