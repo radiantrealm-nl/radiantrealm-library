@@ -1,19 +1,49 @@
 package nl.radiantrealm.library.http.websocket;
 
 import com.sun.net.httpserver.HttpExchange;
+import nl.radiantrealm.library.ApplicationService;
 import nl.radiantrealm.library.http.WsopCode;
 import nl.radiantrealm.library.utils.ByteUtils;
+import nl.radiantrealm.library.utils.Logger;
+import nl.radiantrealm.library.utils.Result;
 
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
-public abstract class WebsocketSession implements WebsocketHandler {
+public abstract class WebsocketSession implements WebsocketHandler, ApplicationService {
+    private final Logger logger = Logger.getLogger(this.getClass());
+
     private final InputStream inputStream;
     private final OutputStream outputStream;
+    private final ExecutorService executorService;
 
     public WebsocketSession(HttpExchange exchange) {
         this.inputStream = exchange.getRequestBody();
         this.outputStream = exchange.getResponseBody();
+        this.executorService = Executors.newSingleThreadScheduledExecutor();
+    }
+
+    @Override
+    public void start() {
+        executorService.submit(() -> {
+            try {
+                if (inputStream.available() > 0) {
+                    Result<WebsocketFrame> frame = Result.tryCatch(this::readFrame);
+                    onFrame(frame.getObject());
+                }
+
+                Thread.sleep(10);
+            } catch (Exception e) {
+                logger.error("Failed to check for incoming frames.");
+            }
+        });
+    }
+
+    @Override
+    public void stop() {
+        executorService.shutdown();
     }
 
     protected WebsocketFrame readFrame() throws Exception {
