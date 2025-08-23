@@ -1,7 +1,19 @@
 package nl.radiantrealm.library;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 public interface ApplicationService {
-    void start() throws Exception;
-    void stop() throws Exception;
-    ApplicationStatus status() throws Exception;
+    AtomicBoolean isRunning = new AtomicBoolean(false);
+
+    default void start() {
+        isRunning.set(true);
+    }
+
+    default void stop() {
+        isRunning.set(false);
+    }
+
+    default boolean isRunning() {
+        return isRunning.get();
+    }
 }
