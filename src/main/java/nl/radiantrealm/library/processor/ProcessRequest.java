@@ -1,3 +1,10 @@
 package nl.radiantrealm.library.processor;
 
-public record ProcessRequest<T>(int processID, T data) {}
+import com.google.gson.JsonObject;
+
+public record ProcessRequest(int processID, JsonObject object, ProcessHandler handler, ProcessResultCallback callback) {
+
+    public String operationalClassName() {
+        return handler.getClass().getSimpleName();
+    }
+}
