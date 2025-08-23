@@ -1,8 +1,6 @@
 package nl.radiantrealm.library.cache;
 
 import nl.radiantrealm.library.ApplicationService;
-import nl.radiantrealm.library.ApplicationStatus;
-import nl.radiantrealm.library.Main;
 import nl.radiantrealm.library.utils.Result;
 
 import java.util.Map;
@@ -20,31 +18,7 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
         this.duration = duration;
     }
 
-    @Override
-    public void start() throws Exception {
-        try {
-            scheduledFuture = Main.scheduleAtFixedRate(0, 60000, this::cleanUpCache);
-        } catch (Exception e) {
-            throw new Exception("Failed to setup cache registry.", e);
-        }
-    }
-
-    @Override
-    public void stop() throws Exception {
-        try {
-            scheduledFuture.cancel(true);
-
-            data.clear();
-            expiry.clear();
-        } catch (Exception e) {
-            throw new Exception("Failed to stop cache registry.");
-        }
-    }
-
-    @Override
-    public ApplicationStatus status() throws Exception {
-        return ApplicationStatus.RUNNING;
-    }
+    //Start/stop system to be re-implemented in next branch.
 
     protected abstract Result<V> load(K key);
 
