@@ -9,7 +9,7 @@ import nl.radiantrealm.library.utils.Logger;
 import java.net.InetSocketAddress;
 
 public abstract class ApplicationRouter {
-    private static final Logger logger = Logger.getLogger(ApplicationRouter.class);
+    private final Logger logger = Logger.getLogger(this.getClass());
     private final HttpServer server;
 
     public ApplicationRouter(int port) {
