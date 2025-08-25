@@ -6,7 +6,6 @@ import nl.radiantrealm.library.utils.Logger;
 import nl.radiantrealm.library.utils.Result;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -14,9 +13,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public abstract class ProcessRouter implements ApplicationService {
     private final Logger logger = Logger.getLogger(this.getClass());
 
-    private final Map<String, ProcessHandler> handlerMap = new HashMap<>();
-    private final Map<Integer, ProcessRequest> procesMap = new ConcurrentHashMap<>();
-    private final AtomicInteger processID = new AtomicInteger(0);
+    private static final Map<Integer, ProcessRequest> procesMap = new ConcurrentHashMap<>();
+    private static final AtomicInteger processID = new AtomicInteger(0);
 
     private final int delay;
     private final ScheduledExecutorService executorService;
@@ -50,7 +48,7 @@ public abstract class ProcessRouter implements ApplicationService {
         ProcessRequest request = tryCatch.getObject();
 
         try {
-            ProcessResult result = request.handler().handle(request);
+            ProcessResult result = request.processType().getHandler().handle(request);
             request.callback().callback(result);
         } catch (Exception e) {
             logger.error(String.format("Unexpected exception in %s.", request.operationalClassName()), e);
@@ -64,22 +62,18 @@ public abstract class ProcessRouter implements ApplicationService {
         procesMap.remove(request.processID());
     }
 
-    protected void registerHandler(String path, ProcessHandler handler) {
-        handlerMap.put(path, handler);
-    }
-
-    public synchronized void createProcess(String path, JsonObject object, ProcessResultCallback callback) throws Exception {
-        ProcessHandler handler = handlerMap.get(path);
+    public static synchronized void createProcess(ProcessType type, JsonObject object, ProcessResultCallback callback) {
+        ProcessHandler handler = type.getHandler();
 
         if (handler == null) {
             throw new IllegalArgumentException("Process does not exist.");
         }
 
-        int processID = this.processID.incrementAndGet();
-        procesMap.put(processID, new ProcessRequest(
-                processID,
+        int nextProcessID = processID.incrementAndGet();
+        procesMap.put(nextProcessID, new ProcessRequest(
+                nextProcessID,
+                type,
                 object,
-                handler,
                 callback
         ));
     }
