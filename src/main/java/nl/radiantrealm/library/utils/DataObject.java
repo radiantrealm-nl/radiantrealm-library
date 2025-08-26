@@ -9,7 +9,7 @@ public interface DataObject<T> {
     Class<T> getType();
 
     @SuppressWarnings("unchecked")
-    default T cast(Object object) {
+    default T cast(Object object) throws Exception {
         if (this.getClass().isInstance(object)) {
             return (T) object;
         }
@@ -17,11 +17,11 @@ public interface DataObject<T> {
         throw new ClassCastException("Object cannot be cast to " + this.getClass().getName());
     }
 
-    default T fromJson(JsonObject object) {
+    default T fromJson(JsonObject object) throws Exception {
         return gson.fromJson(object, getType());
     }
 
-    default JsonObject toJson(T object) {
+    default JsonObject toJson(T object) throws Exception {
         return gson.toJsonTree(object).getAsJsonObject();
     }
 }

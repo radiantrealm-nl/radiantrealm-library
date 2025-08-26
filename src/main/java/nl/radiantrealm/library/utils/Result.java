@@ -20,12 +20,8 @@ public record Result<T>(Optional<T> object, Optional<Exception> exception) {
         }
     }
 
-    public static <T> Result<T> tryWithResources(AutoCloseable autoCloseable, ThrowingFunction<T> throwingFunction) {
-        try (autoCloseable) {
-            return tryCatch(throwingFunction);
-        } catch (Exception e) {
-            return Result.error(e);
-        }
+    public static <T> T tryWith(ThrowingFunction<T> function) throws Exception {
+        return function.apply();
     }
 
     public interface ThrowingFunction<R> {
