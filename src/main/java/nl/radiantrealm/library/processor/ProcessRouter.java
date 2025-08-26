@@ -41,7 +41,7 @@ public abstract class ProcessRouter implements ApplicationService {
         Result<ProcessRequest> tryCatch = Result.tryCatch(() -> procesMap.get(Collections.min(procesMap.keySet())));
 
         if (tryCatch.isObjectEmpty()) {
-            logger.error("Failed to fetch next process request.", tryCatch.getThrowable());
+            logger.error("Failed to fetch next process request.", tryCatch.getError());
             return;
         }
 

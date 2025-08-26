@@ -82,7 +82,7 @@ public class JsonUtils {
             if (element.isObjectEmpty()) {
                 return new Result<>(
                         Optional.empty(),
-                        Optional.of(element.getThrowable())
+                        Optional.of(element.getError())
                 );
             }
 
@@ -102,7 +102,7 @@ public class JsonUtils {
             if (element.isObjectEmpty()) {
                 return new Result<>(
                         Optional.empty(),
-                        Optional.of(element.getThrowable())
+                        Optional.of(element.getError())
                 );
             }
 
@@ -122,7 +122,7 @@ public class JsonUtils {
             if (element.isObjectEmpty()) {
                 return new Result<>(
                         Optional.empty(),
-                        Optional.of(element.getThrowable())
+                        Optional.of(element.getError())
                 );
             }
 
@@ -142,7 +142,7 @@ public class JsonUtils {
             if (element.isObjectEmpty()) {
                 return new Result<>(
                         Optional.empty(),
-                        Optional.of(element.getThrowable())
+                        Optional.of(element.getError())
                 );
             }
 
@@ -172,7 +172,7 @@ public class JsonUtils {
             if (element.isObjectEmpty()) {
                 return new Result<>(
                         Optional.empty(),
-                        Optional.of(element.getThrowable())
+                        Optional.of(element.getError())
                 );
             }
 
