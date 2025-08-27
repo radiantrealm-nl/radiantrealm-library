@@ -1,5 +1,7 @@
 package nl.radiantrealm.library.processor;
 
-public interface ProcessHandler {
-    ProcessResult handle(ProcessRequest request) throws Exception;
+import nl.radiantrealm.library.utils.DataObject;
+
+public interface ProcessHandler<T extends DataObject<T>> {
+    ProcessResult handle(Process<T> process) throws Exception;
 }
