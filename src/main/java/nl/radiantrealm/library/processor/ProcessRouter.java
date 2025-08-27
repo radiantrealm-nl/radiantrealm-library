@@ -1,20 +1,20 @@
 package nl.radiantrealm.library.processor;
 
-import com.google.gson.JsonObject;
 import nl.radiantrealm.library.ApplicationService;
+import nl.radiantrealm.library.utils.DataObject;
 import nl.radiantrealm.library.utils.Logger;
-import nl.radiantrealm.library.utils.Result;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 public abstract class ProcessRouter implements ApplicationService {
     private final Logger logger = Logger.getLogger(this.getClass());
 
-    private static final Map<Integer, ProcessRequest> procesMap = new ConcurrentHashMap<>();
     private static final AtomicInteger processID = new AtomicInteger(0);
+    private static final Map<Integer, Process<?>> processMap = new ConcurrentHashMap<>();
 
     private final int delay;
     private final ScheduledExecutorService executorService;
@@ -28,7 +28,7 @@ public abstract class ProcessRouter implements ApplicationService {
     @Override
     public void start() {
         ApplicationService.super.start();
-        task = executorService.scheduleAtFixedRate(this::handleNextProcess, 0, delay, TimeUnit.MILLISECONDS);
+        task = executorService.scheduleWithFixedDelay(this::handleNextProcess, 0, delay, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -37,44 +37,39 @@ public abstract class ProcessRouter implements ApplicationService {
         task.cancel(false);
     }
 
-    protected void handleNextProcess() {
-        Result<ProcessRequest> tryCatch = Result.tryCatch(() -> procesMap.get(Collections.min(procesMap.keySet())));
+    @SuppressWarnings("unchecked")
+    protected <T extends DataObject<T>> void handleNextProcess() {
+        if (processMap.isEmpty()) return;
 
-        if (tryCatch.isObjectEmpty()) {
-            logger.error("Failed to fetch next process request.", tryCatch.getError());
-            return;
-        }
-
-        ProcessRequest request = tryCatch.getObject();
+        int nextProcessID = Collections.min(processMap.keySet());
+        Process<T> process = (Process<T>) processMap.get(nextProcessID);
 
         try {
-            ProcessResult result = request.processType().getHandler().handle(request);
-            request.callback().callback(result);
+            ProcessResult result = process.handler().handle(process);
+            process.consumer().accept(result);
         } catch (Exception e) {
-            logger.error(String.format("Unexpected exception in %s.", request.operationalClassName()), e);
-            request.callback().callback(new ProcessResult(
-                    request.processID(),
-                    false,
-                    null
-            ));
+            String error = String.format("Unexpected error in %s whilst processing request.", process.handler().getClass().getSimpleName());
+            process.consumer().accept(ProcessResult.error(error, e));
+            logger.error(error, e);
         }
-
-        procesMap.remove(request.processID());
     }
 
-    public static synchronized void createProcess(ProcessType type, JsonObject object, ProcessResultCallback callback) {
-        ProcessHandler handler = type.getHandler();
-
-        if (handler == null) {
-            throw new IllegalArgumentException("Process does not exist.");
-        }
+    public static <E extends ProcessType, T extends DataObject<T>> void createProcess(E processType, T data, Consumer<ProcessResult> consumer) throws IllegalArgumentException {
+        if (processType == null || processType.getHandler() == null) throw new IllegalArgumentException("Process type cannot be null or empty.");
+        if (data == null) throw new IllegalArgumentException("Input data for process cannot be null.");
+        if (!processType.dto().isInstance(data)) throw new IllegalArgumentException("Invalid DataObject (DTO) class.");
 
         int nextProcessID = processID.incrementAndGet();
-        procesMap.put(nextProcessID, new ProcessRequest(
+
+        processMap.put(nextProcessID, new Process<>(
                 nextProcessID,
-                type,
-                object,
-                callback
+                processType.getHandler(),
+                data,
+                consumer
         ));
+    }
+
+    public static <E extends ProcessType, T extends DataObject<T>> void createProcess(E processType, T data) throws IllegalArgumentException {
+        createProcess(processType, data, null);
     }
 }
