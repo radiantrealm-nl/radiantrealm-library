@@ -3,18 +3,19 @@ package nl.radiantrealm.library.processor;
 import com.google.gson.JsonObject;
 import nl.radiantrealm.library.ApplicationService;
 import nl.radiantrealm.library.utils.Logger;
-import nl.radiantrealm.library.utils.Result;
 
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 public abstract class ProcessRouter implements ApplicationService {
     private final Logger logger = Logger.getLogger(this.getClass());
 
-    private static final Map<Integer, ProcessRequest> procesMap = new ConcurrentHashMap<>();
     private static final AtomicInteger processID = new AtomicInteger(0);
+    private static final Map<String, ProcessHandler> handlerMap = new ConcurrentHashMap<>();
+    private static final Map<Integer, Process> processMap = new ConcurrentHashMap<>();
 
     private final int delay;
     private final ScheduledExecutorService executorService;
@@ -28,7 +29,7 @@ public abstract class ProcessRouter implements ApplicationService {
     @Override
     public void start() {
         ApplicationService.super.start();
-        task = executorService.scheduleAtFixedRate(this::handleNextProcess, 0, delay, TimeUnit.MILLISECONDS);
+        task = executorService.scheduleWithFixedDelay(this::handleNextProcess, 0, delay, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -38,43 +39,42 @@ public abstract class ProcessRouter implements ApplicationService {
     }
 
     protected void handleNextProcess() {
-        Result<ProcessRequest> tryCatch = Result.tryCatch(() -> procesMap.get(Collections.min(procesMap.keySet())));
+        if (processMap.isEmpty()) return;
 
-        if (tryCatch.isObjectEmpty()) {
-            logger.error("Failed to fetch next process request.", tryCatch.getError());
-            return;
-        }
+        int nextProcessID = Collections.min(processMap.keySet());
+        Process process = processMap.remove(nextProcessID);
 
-        ProcessRequest request = tryCatch.getObject();
+        if (process == null) return;
 
         try {
-            ProcessResult result = request.processType().getHandler().handle(request);
-            request.callback().callback(result);
+            ProcessResult result = process.handler().handle(process);
+            process.consumer().accept(result);
         } catch (Exception e) {
-            logger.error(String.format("Unexpected exception in %s.", request.operationalClassName()), e);
-            request.callback().callback(new ProcessResult(
-                    request.processID(),
-                    false,
-                    null
-            ));
+            String error = String.format("Unexpected error in %s whilst processing request.", process.handler().getClass().getSimpleName());
+            process.consumer().accept(ProcessResult.error(error, e));
+            logger.error(error, e);
         }
-
-        procesMap.remove(request.processID());
     }
 
-    public static synchronized void createProcess(ProcessType type, JsonObject object, ProcessResultCallback callback) {
-        ProcessHandler handler = type.getHandler();
+    protected void registerHandler(String path, ProcessHandler handler) throws IllegalArgumentException {
+        if (path == null) throw new IllegalArgumentException("Handler path cannot be null.");
+        if (handler == null) throw new IllegalArgumentException("Handler cannot be null or empty.");
 
-        if (handler == null) {
-            throw new IllegalArgumentException("Process does not exist.");
-        }
+        handlerMap.put(path, handler);
+    }
+
+    public static void createProcess(String path, JsonObject object, Consumer<ProcessResult> consumer) throws IllegalArgumentException {
+        ProcessHandler handler = handlerMap.get(path);
+
+        if (handler == null) throw new IllegalArgumentException("Handler not found.");
 
         int nextProcessID = processID.incrementAndGet();
-        procesMap.put(nextProcessID, new ProcessRequest(
+
+        processMap.put(nextProcessID, new Process(
                 nextProcessID,
-                type,
+                handler,
                 object,
-                callback
+                consumer
         ));
     }
 }

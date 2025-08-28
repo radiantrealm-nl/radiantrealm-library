@@ -1,187 +1,72 @@
 package nl.radiantrealm.library.utils;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonSyntaxException;
-import com.sun.net.httpserver.HttpExchange;
 
-import java.io.BufferedReader;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.math.BigDecimal;
-import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 public class JsonUtils {
     private static final Gson gson = new Gson();
 
     private JsonUtils() {}
 
-    /**
-     * Formats a {@link String} into a {@link JsonObject}, utilizing the {@link Result} wrapper.
-     * The converting is done through the {@link Gson} utility tool.
-     *
-     * @param string Input value to format into a {@link JsonObject}.
-     * @return A {@link Result} wrapper containing either the formatted result or an exception on failure.
-     * */
-    public static Result<JsonObject> getJsonObject(String string) {
-        try {
-            if (string == null) {
-                throw new IllegalArgumentException("Unable to parse Json from an empty body.");
-            }
+    public static JsonObject getJsonObject(String string) throws IllegalArgumentException {
+        if (string == null) throw new IllegalArgumentException("Input value for JSON object cannot be null or empty.");
 
-            return new Result<>(
-                    Optional.of(gson.fromJson(string, JsonObject.class)),
-                    Optional.empty()
-            );
-        } catch (Exception e) {
-            return new Result<>(
-                    Optional.empty(),
-                    Optional.of(e)
-            );
-        }
+        return gson.fromJson(string, JsonObject.class);
     }
 
-    /**
-     * Retrieves a {@link JsonElement} from a {@link JsonObject}, utilizing the {@link Result} wrapper.
-     *
-     * @param object The {@link JsonObject} containing the element.
-     * @param key Key to retrieve {@link JsonElement} from.
-     * @return A {@link Result} wrapper containing either the formatted result or an exception on failure.
-     * */
-    public static Result<JsonElement> getJsonElement(JsonObject object, String key) {
-        try {
-            if (object == null) {
-                throw new IllegalArgumentException("Unable to parse from an empty body.");
-            }
+    public static JsonArray getJsonArray(JsonObject object, String key) throws IllegalArgumentException {
+        JsonElement element = getJsonElement(object, key);
 
-            JsonElement element = object.get(key);
-
-            if (element == null) {
-                throw new JsonSyntaxException("Could not find key.");
-            }
-
-            return new Result<>(
-                    Optional.of(element),
-                    Optional.empty()
-            );
-        } catch (Exception e) {
-            return new Result<>(
-                    Optional.empty(),
-                    Optional.of(e)
-            );
+        if (element == null) {
+            throw new IllegalArgumentException(String.format("Key '%s' not found in JSON object.", key));
         }
+
+        if (!element.isJsonArray()) {
+            throw new IllegalArgumentException(String.format("Element at key '%s' is not a JSON array.", key));
+        }
+
+        return element.getAsJsonArray();
     }
 
-    public static Result<BigDecimal> getJsonBigDecimal(JsonObject object, String key) {
-        try {
-            Result<JsonElement> element = getJsonElement(object, key);
+    public static JsonElement getJsonElement(JsonObject object, String key) throws IllegalArgumentException {
+        if (object == null) throw new IllegalArgumentException("JSON object cannot be null.");
+        if (key == null) throw new IllegalArgumentException("Key for JSON element cannot be null or empty.");
 
-            if (element.isObjectEmpty()) {
-                return new Result<>(
-                        Optional.empty(),
-                        Optional.of(element.getError())
-                );
-            }
-
-            return FormatUtils.parseBigDecimal(element.getObject().getAsString());
-        } catch (Exception e) {
-            return new Result<>(
-                    Optional.empty(),
-                    Optional.of(e)
-            );
-        }
+        return object.get(key);
     }
 
-    public static Result<Boolean> getJsonBoolean(JsonObject object, String key) {
-        try {
-            Result<JsonElement> element = getJsonElement(object, key);
-
-            if (element.isObjectEmpty()) {
-                return new Result<>(
-                        Optional.empty(),
-                        Optional.of(element.getError())
-                );
-            }
-
-            return FormatUtils.parseBoolean(element.getObject().getAsString());
-        } catch (Exception e) {
-            return new Result<>(
-                    Optional.empty(),
-                    Optional.of(e)
-            );
-        }
+    public static BigDecimal getJsonBigDecimal(JsonObject object, String key) throws IllegalArgumentException {
+        return FormatUtils.formatBigDecimal(getJsonString(object, key));
     }
 
-    public static Result<Integer> getJsonInteger(JsonObject object, String key) {
-        try {
-            Result<JsonElement> element = getJsonElement(object, key);
-
-            if (element.isObjectEmpty()) {
-                return new Result<>(
-                        Optional.empty(),
-                        Optional.of(element.getError())
-                );
-            }
-
-            return FormatUtils.parseInteger(element.getObject().getAsString());
-        } catch (Exception e) {
-            return new Result<>(
-                    Optional.empty(),
-                    Optional.of(e)
-            );
-        }
+    public static <T extends Enum<T>> T getJsonEnum(JsonObject object, String key, Class<T> enumerator) throws IllegalArgumentException {
+        return FormatUtils.formatEnum(enumerator, getJsonString(object, key));
     }
 
-    public static Result<String> getJsonString(JsonObject object, String key) {
-        try {
-            Result<JsonElement> element = getJsonElement(object, key);
-
-            if (element.isObjectEmpty()) {
-                return new Result<>(
-                        Optional.empty(),
-                        Optional.of(element.getError())
-                );
-            }
-
-            return new Result<>(
-                    Optional.of(element.getObject().getAsString()),
-                    Optional.empty()
-            );
-        } catch (Exception e) {
-            return new Result<>(
-                    Optional.empty(),
-                    Optional.of(e)
-            );
-        }
+    public static Integer getJsonInteger(JsonObject object, String key) throws IllegalArgumentException {
+        return FormatUtils.formatInteger(getJsonString(object, key));
     }
 
-    /**
-     * Retrieves a {@link UUID} from a {@link JsonObject}, utilizing the {@link Result} wrapper.
-     *
-     * @param object The {@link JsonObject} containinig the element.
-     * @param key Key to retrieve {@link JsonElement}, converted to a {@link UUID}.
-     * @return A {@link Result} wrapper containing either the formatted result or an exception on failure.
-     * */
-    public static Result<UUID> getJsonUUID(JsonObject object, String key) {
-        try {
-            Result<JsonElement> element = getJsonElement(object, key);
+    public static Long getJsonLong(JsonObject object, String key) throws IllegalArgumentException {
+        return FormatUtils.formatLong(getJsonString(object, key));
+    }
 
-            if (element.isObjectEmpty()) {
-                return new Result<>(
-                        Optional.empty(),
-                        Optional.of(element.getError())
-                );
-            }
+    public static String getJsonString(JsonObject object, String key) throws IllegalArgumentException {
+        JsonElement element = getJsonElement(object, key);
 
-            return FormatUtils.parseUUID(element.getObject().getAsString());
-        } catch (Exception e) {
-            return new Result<>(
-                    Optional.empty(),
-                    Optional.of(e)
-            );
+        if (element == null) {
+            throw new IllegalArgumentException(String.format("Key '%s' not found in JSON object.", key));
         }
+
+        return element.getAsString();
+    }
+
+    public static UUID getJsonUUID(JsonObject object, String key) throws IllegalArgumentException {
+        return FormatUtils.formatUUID(getJsonString(object, key));
     }
 }

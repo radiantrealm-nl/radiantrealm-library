@@ -20,12 +20,20 @@ public record Result<T>(Optional<T> object, Optional<Exception> exception) {
         }
     }
 
-    public static <T> T tryWith(ThrowingFunction<T> function) throws Exception {
+    public static <T> T tryFunction(ThrowingFunction<T> function) throws Exception {
+        return function.apply();
+    }
+
+    public static <T> T function(Function<T> function) {
         return function.apply();
     }
 
     public interface ThrowingFunction<R> {
         R apply() throws Exception;
+    }
+
+    public interface Function<R> {
+        R apply();
     }
 
     public T getObject() {

@@ -1,5 +1,5 @@
 package nl.radiantrealm.library.processor;
 
 public interface ProcessHandler {
-    ProcessResult handle(ProcessRequest request) throws Exception;
+    ProcessResult handle(Process process) throws Exception;
 }
