@@ -2,6 +2,8 @@ package nl.radiantrealm.library.cache;
 
 import nl.radiantrealm.library.ApplicationService;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
@@ -55,6 +57,38 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
         }
 
         return value;
+    }
+
+    public Map<K, V> get(List<K> keys) throws Exception {
+        if (keys == null || keys.isEmpty()) throw new IllegalArgumentException("Keys cannot be null or empty.");
+
+        if (keys.size() == 1) {
+            K key = keys.getFirst();
+            V value = get(key);
+            return Map.of(key, value);
+        }
+
+        Map<K, V> cachedKeys = new HashMap<>(keys.size());
+        List<K> loadKeys = new ArrayList<>();
+
+        for (K key : keys) {
+            V value = data.get(key);
+
+            if (value == null) {
+                loadKeys.add(key);
+            } else {
+                cachedKeys.put(key, value);
+            }
+        }
+
+        cachedKeys.putAll(load(loadKeys));
+
+        for (K key : keys) {
+            V value = cachedKeys.get(key);
+            put(key, value);
+        }
+
+        return cachedKeys;
     }
 
     public void put(K key, V value) throws IllegalArgumentException {
