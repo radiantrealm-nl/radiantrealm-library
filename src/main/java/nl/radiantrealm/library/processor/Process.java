@@ -1,7 +1,7 @@
 package nl.radiantrealm.library.processor;
 
-import nl.radiantrealm.library.utils.DataObject;
+import com.google.gson.JsonObject;
 
 import java.util.function.Consumer;
 
-public record Process<T extends DataObject<T>>(int processID, ProcessHandler<T> handler, T input, Consumer<ProcessResult> consumer) {}
+public record Process(int processID, ProcessHandler handler, JsonObject object, Consumer<ProcessResult> consumer) {}
