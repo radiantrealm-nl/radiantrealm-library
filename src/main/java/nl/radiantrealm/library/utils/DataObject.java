@@ -3,25 +3,22 @@ package nl.radiantrealm.library.utils;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
-public interface DataObject<T> {
+import java.lang.reflect.InvocationTargetException;
+
+public interface DataObject {
     Gson gson = new Gson();
 
-    Class<T> getType();
+    default JsonObject toJson() throws IllegalStateException {
+        return gson.toJsonTree(this.getClass()).getAsJsonObject();
+    }
 
-    @SuppressWarnings("unchecked")
-    default T cast(Object object) throws Exception {
-        if (this.getClass().isInstance(object)) {
-            return (T) object;
+    static <T extends DataObject> T fromJson(Class<T> clazz, JsonObject object) throws Exception {
+        try {
+            return clazz.getConstructor(JsonObject.class).newInstance(object);
+        } catch (NoSuchMethodException e) {
+            return gson.fromJson(object, clazz);
+        } catch (InvocationTargetException | InstantiationException | IllegalArgumentException e) {
+            throw new Exception("Failed to instance class for " + clazz.getSimpleName(), e);
         }
-
-        throw new ClassCastException("Object cannot be cast to " + this.getClass().getName());
-    }
-
-    default T fromJson(JsonObject object) throws Exception {
-        return gson.fromJson(object, getType());
-    }
-
-    default JsonObject toJson(T object) throws Exception {
-        return gson.toJsonTree(object).getAsJsonObject();
     }
 }
