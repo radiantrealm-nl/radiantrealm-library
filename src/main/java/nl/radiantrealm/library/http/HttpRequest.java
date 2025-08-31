@@ -3,6 +3,7 @@ package nl.radiantrealm.library.http;
 import com.google.gson.JsonObject;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
+import nl.radiantrealm.library.processor.ProcessResult;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
@@ -62,6 +63,10 @@ public record HttpRequest(HttpExchange exchange, InputStream inputStream, Output
         }
 
         sendStatusResponse(statusCode, key, statusCode.message);
+    }
+
+    public void sendProcessResult(ProcessResult processResult) throws Exception {
+        sendResponse(StatusCode.OK, processResult.toJson());
     }
 
     public void setResponseHeaders(String key, String value) {
