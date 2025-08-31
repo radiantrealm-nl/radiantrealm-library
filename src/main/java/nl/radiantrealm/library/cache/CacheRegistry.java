@@ -9,12 +9,12 @@ import java.util.Map;
 import java.util.concurrent.*;
 
 public abstract class CacheRegistry<K, V> implements ApplicationService {
-    private final Map<K, V> data = new ConcurrentHashMap<>();
-    private final Map<K, Long> expiry = new ConcurrentHashMap<>();
+    protected final Map<K, V> data = new ConcurrentHashMap<>();
+    protected final Map<K, Long> expiry = new ConcurrentHashMap<>();
 
-    private final int expiryDuration;
-    private final ScheduledExecutorService executorService;
-    private ScheduledFuture<?> task;
+    protected final int expiryDuration;
+    protected final ScheduledExecutorService executorService;
+    protected ScheduledFuture<?> task;
 
     public CacheRegistry(int expiryDuration) {
         this.expiryDuration = expiryDuration;
@@ -31,6 +31,7 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
     public void stop() {
         ApplicationService.super.stop();
         task.cancel(false);
+        clear();
     }
 
     protected void cleanUpCache() {
@@ -45,7 +46,15 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
 
     protected abstract V load(K key) throws Exception;
 
-    protected abstract Map<K, V> load(List<K> keys) throws Exception;
+    protected Map<K, V> load(List<K> keys) throws Exception {
+        Map<K, V> map = new HashMap<>(keys.size());
+
+        for (K key : keys) {
+            map.put(key, load(key));
+        }
+
+        return map;
+    }
 
     public V get(K key) throws Exception {
         if (key == null) throw new IllegalArgumentException("Key cannot be null or empty.");
@@ -102,5 +111,10 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
     public void remove(K key) {
         data.remove(key);
         expiry.remove(key);
+    }
+
+    public void clear() {
+        data.clear();
+        expiry.clear();
     }
 }
