@@ -33,6 +33,20 @@ public class JsonUtils {
         return element.getAsJsonArray();
     }
 
+    public static JsonObject getJsonObject(JsonObject object, String key) throws IllegalArgumentException {
+        JsonElement element = getJsonElement(object, key);
+
+        if (element == null) {
+            throw new IllegalArgumentException(String.format("Key '%s' not found in JSON object.", key));
+        }
+
+        if (!element.isJsonObject()) {
+            throw new IllegalArgumentException(String.format("Element at key '%s' is not a JSON object.", key));
+        }
+
+        return element.getAsJsonObject();
+    }
+
     public static JsonElement getJsonElement(JsonObject object, String key) throws IllegalArgumentException {
         if (object == null) throw new IllegalArgumentException("JSON object cannot be null.");
         if (key == null) throw new IllegalArgumentException("Key for JSON element cannot be null or empty.");

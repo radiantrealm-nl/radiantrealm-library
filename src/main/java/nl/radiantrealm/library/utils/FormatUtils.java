@@ -1,6 +1,8 @@
 package nl.radiantrealm.library.utils;
 
 import java.math.BigDecimal;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.UUID;
 
 public class FormatUtils {
@@ -40,6 +42,10 @@ public class FormatUtils {
         return Enum.valueOf(enumerator, string);
     }
 
+    public static <T extends Enum<T>> T formatEnum(Class<T> enumerator, ResultSet resultSet, String key) throws IllegalArgumentException, ClassCastException, SQLException {
+        return formatEnum(enumerator, resultSet.getString(key));
+    }
+
     public static Integer formatInteger(String string) throws IllegalArgumentException {
         if (string == null) throw new IllegalArgumentException("Input value for integer cannot be null or empty.");
 
@@ -56,5 +62,9 @@ public class FormatUtils {
         if (string == null) throw new IllegalArgumentException("Input value for UUID cannot be null or empty.");
 
         return UUID.fromString(string);
+    }
+
+    public static UUID formatUUID(ResultSet resultSet, String key) throws SQLException {
+        return formatUUID(resultSet.getString(key));
     }
 }
