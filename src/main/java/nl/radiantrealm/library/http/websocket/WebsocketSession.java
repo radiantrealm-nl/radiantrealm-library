@@ -13,11 +13,11 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public abstract class WebsocketSession implements WebsocketHandler, ApplicationService {
-    private final Logger logger = Logger.getLogger(this.getClass());
+    protected final Logger logger = Logger.getLogger(this.getClass());
 
-    private final InputStream inputStream;
-    private final OutputStream outputStream;
-    private final ExecutorService executorService;
+    protected final InputStream inputStream;
+    protected final OutputStream outputStream;
+    protected final ExecutorService executorService;
 
     public WebsocketSession(HttpExchange exchange) {
         this.inputStream = exchange.getRequestBody();
@@ -27,6 +27,7 @@ public abstract class WebsocketSession implements WebsocketHandler, ApplicationS
 
     @Override
     public void start() {
+        ApplicationService.super.start();
         executorService.submit(() -> {
             try {
                 if (inputStream.available() > 0) {
@@ -43,6 +44,7 @@ public abstract class WebsocketSession implements WebsocketHandler, ApplicationS
 
     @Override
     public void stop() {
+        ApplicationService.super.stop();
         executorService.shutdown();
     }
 

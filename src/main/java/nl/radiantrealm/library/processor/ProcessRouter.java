@@ -11,15 +11,15 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 
 public abstract class ProcessRouter implements ApplicationService {
-    private final Logger logger = Logger.getLogger(this.getClass());
+    protected final Logger logger = Logger.getLogger(this.getClass());
 
-    private static final AtomicInteger processID = new AtomicInteger(0);
-    private static final Map<String, ProcessHandler> handlerMap = new ConcurrentHashMap<>();
-    private static final Map<Integer, Process> processMap = new ConcurrentHashMap<>();
+    protected static final AtomicInteger processID = new AtomicInteger(0);
+    protected static final Map<String, ProcessHandler> handlerMap = new ConcurrentHashMap<>();
+    protected static final Map<Integer, Process> processMap = new ConcurrentHashMap<>();
 
-    private final int delay;
-    private final ScheduledExecutorService executorService;
-    private ScheduledFuture<?> task;
+    protected final int delay;
+    protected final ScheduledExecutorService executorService;
+    protected ScheduledFuture<?> task;
 
     public ProcessRouter(int delay) {
         this.delay = delay;
