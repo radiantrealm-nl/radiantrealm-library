@@ -1,26 +1,50 @@
 package nl.radiantrealm.library.controller;
 
+import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import nl.radiantrealm.library.ApplicationService;
 
 import java.sql.Connection;
 
 public abstract class DatabaseController implements ApplicationService {
-    private static HikariDataSource dataSource;
+    protected static HikariDataSource dataSource;
 
-    public DatabaseController() {}
+    protected abstract String databaseURL();
+    protected abstract String databaseUsername();
+    protected abstract String databasePassword();
 
-    //Start/stop system to be re-implemented in next branch.
+    @Override
+    public void start() {
+        ApplicationService.super.start();
 
-    protected abstract String setDatabaseURL();
+        if (dataSource == null) {
+            dataSource = setupDataSource();
+        }
+    }
 
-    protected abstract String setDatabaseUsername();
+    @Override
+    public void stop() {
+        ApplicationService.super.stop();
 
-    protected abstract String setDatabasePassword();
+        if (dataSource != null) {
+            dataSource.close();
+            dataSource = null;
+        }
+    }
 
-    public static Connection getConnection(boolean autoCommiit) throws Exception {
+    protected HikariDataSource setupDataSource() {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(databaseURL());
+        config.setUsername(databaseUsername());
+        config.setPassword(databasePassword());
+        config.setMaximumPoolSize(10);
+        config.setIdleTimeout(30000);
+        return new HikariDataSource(config);
+    }
+
+    public static Connection getConnection(boolean autoCommit) throws Exception {
         Connection connection = dataSource.getConnection();
-        connection.setAutoCommit(autoCommiit);
+        connection.setAutoCommit(autoCommit);
         return connection;
     }
 
@@ -33,6 +57,6 @@ public abstract class DatabaseController implements ApplicationService {
     }
 
     public static void rollback(Connection connection) throws Exception {
-        connection.commit();
+        connection.rollback();
     }
 }
