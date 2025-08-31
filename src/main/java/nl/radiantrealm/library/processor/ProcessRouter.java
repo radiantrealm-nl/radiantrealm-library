@@ -51,7 +51,7 @@ public abstract class ProcessRouter implements ApplicationService {
             process.consumer().accept(result);
         } catch (Exception e) {
             String error = String.format("Unexpected error in %s whilst processing request.", process.handler().getClass().getSimpleName());
-            process.consumer().accept(ProcessResult.error(error, e));
+            process.consumer().accept(ProcessResult.error(500, error, e));
             logger.error(error, e);
         }
     }
