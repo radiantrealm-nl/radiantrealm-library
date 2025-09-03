@@ -12,7 +12,7 @@ public interface DataObject {
         return gson.toJsonTree(this.getClass()).getAsJsonObject();
     }
 
-    static <T extends DataObject> T fromJson(Class<T> clazz, JsonObject object) throws Exception {
+    static <T> T fromJson(Class<T> clazz, JsonObject object) throws Exception {
         try {
             return clazz.getConstructor(JsonObject.class).newInstance(object);
         } catch (NoSuchMethodException e) {
