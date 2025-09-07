@@ -1,6 +1,8 @@
 package nl.radiantrealm.library.utils;
 
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.UUID;
@@ -56,6 +58,13 @@ public class FormatUtils {
         if (string == null) throw new IllegalArgumentException("Input value for long cannot be null or empty.");
 
         return Long.parseLong(string);
+    }
+
+    public static String formatString(Charset charsets, byte[] bytes) throws IllegalArgumentException {
+        if (bytes == null) throw new IllegalArgumentException("Input value for bytes cannot be null or empty.");
+        if (charsets == null) charsets = StandardCharsets.UTF_8;
+
+        return new String(bytes, charsets);
     }
 
     public static UUID formatUUID(String string) throws IllegalArgumentException {
