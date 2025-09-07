@@ -24,6 +24,22 @@ public record Result<T>(Optional<T> object, Optional<Exception> exception) {
         return function.apply();
     }
 
+    public static <T> T nullFunction(ThrowingFunction<T> function) {
+        try {
+            return function.apply();
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    public static <T> T defaultFunction(ThrowingFunction<T> function, T defaultReturn) {
+        try {
+            return function.apply();
+        } catch (Exception e) {
+            return defaultReturn;
+        }
+    }
+
     public static <T> T function(Function<T> function) {
         return function.apply();
     }
