@@ -6,7 +6,7 @@
 
     <groupId>nl.radiantrealm.library</groupId>
     <artifactId>radiantrealm-library</artifactId>
-    <version>1.4.4</version>
+    <version>1.4.5</version>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
