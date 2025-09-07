@@ -32,7 +32,7 @@ public record Result<T>(Optional<T> object, Optional<Exception> exception) {
         }
     }
 
-    public static <T> T defaultFunction(ThrowingFunction<T> function, T defaultReturn) {
+    public static <T> T defaultFunction(T defaultReturn, ThrowingFunction<T> function) {
         try {
             return function.apply();
         } catch (Exception e) {
