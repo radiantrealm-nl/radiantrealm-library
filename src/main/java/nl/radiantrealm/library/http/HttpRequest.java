@@ -55,14 +55,18 @@ public record HttpRequest(HttpExchange exchange, InputStream inputStream, Output
         sendResponse(statusCode, object);
     }
 
-    public void sendStatusResponse(StatusCode statusCode) throws Exception {
+    public void sendStatusResponse(StatusCode statusCode, String message) throws Exception {
         String key = statusCode.getKeyType();
 
         if (key == null) {
             key = "info";
         }
 
-        sendStatusResponse(statusCode, key, statusCode.message);
+        sendStatusResponse(statusCode, key, message);
+    }
+
+    public void sendStatusResponse(StatusCode statusCode) throws Exception {
+        sendStatusResponse(statusCode, statusCode.message);
     }
 
     public void sendProcessResult(ProcessResult processResult) throws Exception {
