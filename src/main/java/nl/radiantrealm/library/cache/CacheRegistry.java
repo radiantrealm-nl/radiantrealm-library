@@ -2,6 +2,7 @@ package nl.radiantrealm.library.cache;
 
 import nl.radiantrealm.library.ApplicationService;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -12,19 +13,19 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
     protected final Map<K, V> data = new ConcurrentHashMap<>();
     protected final Map<K, Long> expiry = new ConcurrentHashMap<>();
 
-    protected final int expiryDuration;
+    protected final Duration expiryDuration;
     protected final ScheduledExecutorService executorService;
     protected ScheduledFuture<?> task;
 
-    public CacheRegistry(int expiryDuration) {
-        this.expiryDuration = expiryDuration;
+    public CacheRegistry(Duration duration) {
+        this.expiryDuration = duration;
         this.executorService = Executors.newSingleThreadScheduledExecutor();
     }
 
     @Override
     public void start() {
         ApplicationService.super.start();
-        task = executorService.scheduleAtFixedRate(this::cleanUpCache, expiryDuration, 60000, TimeUnit.MILLISECONDS);
+        task = executorService.scheduleAtFixedRate(this::cleanUpCache, expiryDuration.toMillis(), 60000, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -39,7 +40,7 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
 
         for (Map.Entry<K, Long> entry : expiry.entrySet()) {
             if (timestamp > entry.getValue()) {
-                remove(entry.getKey());
+                remove(entry.getKey(), data.get(entry.getKey()));
             }
         }
     }
@@ -105,10 +106,10 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
         if (value == null) throw new IllegalArgumentException("Value cannot be null or empty.");
 
         data.put(key, value);
-        expiry.put(key, System.currentTimeMillis() + expiryDuration);
+        expiry.put(key, System.currentTimeMillis() + expiryDuration.toMillis());
     }
 
-    public void remove(K key) {
+    public void remove(K key, V value) {
         data.remove(key);
         expiry.remove(key);
     }
