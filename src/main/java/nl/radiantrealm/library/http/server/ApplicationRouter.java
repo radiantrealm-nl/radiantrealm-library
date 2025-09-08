@@ -35,7 +35,7 @@ public abstract class ApplicationRouter {
         });
     }
 
-    protected void register(String path, WebsocketHandler websocketHandler) {
+    protected void registerWebsocket(String path, WebsocketHandler websocketHandler) {
         register(path, websocketHandler::handshake);
     }
 }
