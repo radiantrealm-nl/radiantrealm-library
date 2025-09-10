@@ -4,12 +4,17 @@ import com.google.gson.JsonObject;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
 import nl.radiantrealm.library.processor.ProcessResult;
+import nl.radiantrealm.library.utils.JsonUtils;
 
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.net.HttpCookie;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 public record HttpRequest(HttpExchange exchange, InputStream inputStream, OutputStream outputStream) implements AutoCloseable {
@@ -27,6 +32,10 @@ public record HttpRequest(HttpExchange exchange, InputStream inputStream, Output
         return new BufferedReader(new InputStreamReader(inputStream))
                 .lines()
                 .collect(Collectors.joining("\n"));
+    }
+
+    public JsonObject getRequestBodyAsJson() throws IllegalArgumentException {
+        return JsonUtils.getJsonObject(getRequestBody());
     }
 
     public void sendResponse(int statusCode, String mimeType, String body) throws Exception {
@@ -91,5 +100,33 @@ public record HttpRequest(HttpExchange exchange, InputStream inputStream, Output
 
     public Headers getResponseHeaders() {
         return exchange.getResponseHeaders();
+    }
+
+    public String getRequestURI() {
+        return exchange.getRequestURI().toString();
+    }
+
+    public Map<String, HttpCookie> getCookies() {
+        List<String> cookies = exchange.getRequestHeaders().get("Cookie");
+
+        if (cookies == null) {
+            return Map.of();
+        }
+
+        Map<String, HttpCookie> map = new HashMap<>(cookies.size());
+
+        for (String cookieHeader : cookies) {
+            List<HttpCookie> parsed = HttpCookie.parse(cookieHeader);
+
+            for (HttpCookie cookie : parsed) {
+                map.put(cookie.getName(), cookie);
+            }
+        }
+
+        return map;
+    }
+
+    public HttpCookie getCookie(String key) {
+        return getCookies().get(key);
     }
 }
