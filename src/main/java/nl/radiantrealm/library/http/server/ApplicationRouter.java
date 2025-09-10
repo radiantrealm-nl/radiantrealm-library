@@ -26,16 +26,24 @@ public abstract class ApplicationRouter {
     }
 
     protected void register(String path, RequestHandler handler) {
+        register(path, handler, false);
+    }
+
+    protected void register(String path, RequestHandler handler, boolean keepAlive) {
         server.createContext(path, exchange -> {
             try {
                 handler.handle(new HttpRequest(exchange));
             } catch (Exception e) {
                 logger.error(String.format("Unexpected exception in %s.", handler.getClass().getSimpleName()), e);
+            } finally {
+                if (!keepAlive) {
+                    exchange.close();
+                }
             }
         });
     }
 
     protected void registerWebsocket(String path, WebsocketHandler websocketHandler) {
-        register(path, websocketHandler::handshake);
+        register(path, websocketHandler::handshake, true);
     }
 }
