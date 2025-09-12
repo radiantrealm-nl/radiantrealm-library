@@ -23,6 +23,7 @@ public enum StatusCode {
     NOT_FOUND(404, "The request resource was not found."),
     INVALID_METHOD(405, "Invalid request method."),
     CONFLICT(409, "Conflicting request body."),
+    UNPROCESSABLE_ENTITY(422, "Unprocessable entity."),
     REQUEST_TIMEOUT(429, "Too many requests."),
 
     SERVER_ERROR(500, "A server error ocurred."),
