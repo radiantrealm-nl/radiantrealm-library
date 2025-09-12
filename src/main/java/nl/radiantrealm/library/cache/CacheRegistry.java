@@ -110,6 +110,10 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
         expiry.put(key, System.currentTimeMillis() + expiryDuration.toMillis());
     }
 
+    public void remove(K key) {
+        remove(key, null);
+    }
+
     public void remove(K key, V value) {
         data.remove(key);
         expiry.remove(key);
