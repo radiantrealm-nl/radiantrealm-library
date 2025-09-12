@@ -3,10 +3,7 @@ package nl.radiantrealm.library.cache;
 import nl.radiantrealm.library.ApplicationService;
 
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 
 public abstract class CacheRegistry<K, V> implements ApplicationService {
@@ -99,6 +96,10 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
         }
 
         return cachedKeys;
+    }
+
+    public Map<K, V> get(Set<K> keys) throws Exception {
+        return get(keys.stream().toList());
     }
 
     public void put(K key, V value) throws IllegalArgumentException {
