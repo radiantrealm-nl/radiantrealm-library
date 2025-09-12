@@ -58,7 +58,7 @@ public class JsonUtils {
         return FormatUtils.formatBigDecimal(getJsonString(object, key));
     }
 
-    public static <T extends Enum<T>> T getJsonEnum(JsonObject object, String key, Class<T> enumerator) throws IllegalArgumentException {
+    public static <T extends Enum<T>> T getJsonEnum(Class<T> enumerator, JsonObject object, String key) throws IllegalArgumentException {
         return FormatUtils.formatEnum(enumerator, getJsonString(object, key));
     }
 
