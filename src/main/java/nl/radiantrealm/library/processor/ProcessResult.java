@@ -1,6 +1,7 @@
 package nl.radiantrealm.library.processor;
 
 import com.google.gson.JsonObject;
+import nl.radiantrealm.library.http.StatusCode;
 import nl.radiantrealm.library.utils.JsonUtils;
 
 import java.util.Optional;
@@ -25,6 +26,14 @@ public record ProcessResult(boolean success, int code, Optional<JsonObject> obje
                 Optional.empty(),
                 Optional.empty()
         );
+    }
+
+    public static ProcessResult error(StatusCode code, String error) {
+        return error(code.code, error);
+    }
+
+    public static ProcessResult error(StatusCode code, String error, Exception e) {
+        return error(code.code, error, e);
     }
 
     public static ProcessResult error(int code, String error) {
