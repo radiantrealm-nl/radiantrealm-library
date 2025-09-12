@@ -6,7 +6,9 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 
 import java.math.BigDecimal;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public class JsonUtils {
     private static final Gson gson = new Gson();
@@ -82,5 +84,26 @@ public class JsonUtils {
 
     public static UUID getJsonUUID(JsonObject object, String key) throws IllegalArgumentException {
         return FormatUtils.formatUUID(getJsonString(object, key));
+    }
+
+    public static <K, V> Map<K, V> getJsonMap(JsonObject object, BiFunction<String, JsonElement, Map.Entry<K, V>> function) throws IllegalArgumentException {
+        Map<K, V> map = new HashMap<>(object.size());
+
+        for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
+            Map.Entry<K, V> parsedEntry = function.apply(entry.getKey(), entry.getValue());
+            map.put(parsedEntry.getKey(), parsedEntry.getValue());
+        }
+
+        return map;
+    }
+
+    public static <T> List<T> getJsonList(JsonArray array, Function<JsonElement, T> function) throws IllegalArgumentException {
+        List<T> list = new ArrayList<>(array.size());
+
+        for (JsonElement element : array) {
+            list.add(function.apply(element));
+        }
+
+        return list;
     }
 }
