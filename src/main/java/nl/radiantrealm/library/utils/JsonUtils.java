@@ -21,6 +21,12 @@ public class JsonUtils {
         return gson.fromJson(string, JsonObject.class);
     }
 
+    public static JsonArray getJsonArray(String string) throws IllegalArgumentException {
+        if (string == null) throw new IllegalArgumentException("Input value for JSON array cannot be null or empty.");
+
+        return gson.fromJson(string, JsonArray.class);
+    }
+
     public static JsonArray getJsonArray(JsonObject object, String key) throws IllegalArgumentException {
         JsonElement element = getJsonElement(object, key);
 
