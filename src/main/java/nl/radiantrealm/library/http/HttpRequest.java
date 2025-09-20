@@ -58,24 +58,20 @@ public record HttpRequest(HttpExchange exchange, InputStream inputStream, Output
         sendResponse(statusCode, MimeType.JSON, object.toString());
     }
 
-    public void sendStatusResponse(StatusCode statusCode, String key, String value) throws Exception {
-        JsonObject object = new JsonObject();
-        object.addProperty(key, value);
-        sendResponse(statusCode, object);
+    public void sendStatusResponse(HttpResponse response) throws Exception {
+        sendResponse(response.statusCode(), MimeType.JSON.type, response.responseBody());
+    }
+
+    public void sendStatusResponse(StatusCode statusCode, String key, String message) throws Exception {
+        sendResponse(statusCode, statusCode.buildObject(key, message));
     }
 
     public void sendStatusResponse(StatusCode statusCode, String message) throws Exception {
-        String key = statusCode.getKeyType();
-
-        if (key == null) {
-            key = "info";
-        }
-
-        sendStatusResponse(statusCode, key, message);
+        sendResponse(statusCode, statusCode.buildObject(message));
     }
 
     public void sendStatusResponse(StatusCode statusCode) throws Exception {
-        sendStatusResponse(statusCode, statusCode.message);
+        sendResponse(statusCode, statusCode.buildObject());
     }
 
     public void sendProcessResult(ProcessResult processResult) throws Exception {
