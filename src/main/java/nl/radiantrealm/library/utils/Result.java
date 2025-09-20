@@ -1,6 +1,8 @@
 package nl.radiantrealm.library.utils;
 
 import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 public record Result<T>(Optional<T> object, Optional<Exception> exception) {
 
@@ -10,46 +12,6 @@ public record Result<T>(Optional<T> object, Optional<Exception> exception) {
 
     public static <T> Result<T> error(Exception exception) {
         return new Result<>(Optional.empty(), Optional.of(exception));
-    }
-
-    public static <T> Result<T> tryCatch(ThrowingFunction<T> throwingFunction) {
-        try {
-            return Result.ok(throwingFunction.apply());
-        } catch (Exception e) {
-            return Result.error(e);
-        }
-    }
-
-    public static <T> T tryFunction(ThrowingFunction<T> function) throws Exception {
-        return function.apply();
-    }
-
-    public static <T> T nullFunction(ThrowingFunction<T> function) {
-        try {
-            return function.apply();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    public static <T> T defaultFunction(T defaultReturn, ThrowingFunction<T> function) {
-        try {
-            return function.apply();
-        } catch (Exception e) {
-            return defaultReturn;
-        }
-    }
-
-    public static <T> T function(Function<T> function) {
-        return function.apply();
-    }
-
-    public interface ThrowingFunction<R> {
-        R apply() throws Exception;
-    }
-
-    public interface Function<R> {
-        R apply();
     }
 
     public T getObject() {
@@ -67,6 +29,38 @@ public record Result<T>(Optional<T> object, Optional<Exception> exception) {
     public void throwIt() throws Exception {
         if (exception.isPresent()) {
             throw exception.get();
+        }
+    }
+
+    public static <T, R> R function(Function<T, R> function, T arg1) {
+        return function.apply(arg1);
+    }
+
+    public static <T, U, R> R function(BiFunction<T, U, R> function, T arg1, U arg2) {
+        return function.apply(arg1, arg2);
+    }
+
+    public static <T, R> R tryFunction(ThrowingFunction<T, R> function, T arg1) throws Exception {
+        return function.apply(arg1);
+    }
+
+    public static <T, U, R> R tryFunction(ThrowingBiFunction<T, U, R> function, T arg1, U arg2) throws Exception {
+        return function.apply(arg1, arg2);
+    }
+
+    public static <T, R> Result<R> tryCatch(ThrowingFunction<T, R> function, T arg1) {
+        try {
+            return Result.ok(function.apply(arg1));
+        } catch (Exception e) {
+            return Result.error(e);
+        }
+    }
+
+    public static <T, U, R> Result<R> tryCatch(ThrowingBiFunction<T, U, R> function, T arg1, U arg2) {
+        try {
+            return Result.ok(function.apply(arg1, arg2));
+        } catch (Exception e) {
+            return Result.error(e);
         }
     }
 }
