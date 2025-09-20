@@ -1,5 +1,7 @@
 package nl.radiantrealm.library.http;
 
+import com.google.gson.JsonObject;
+
 public enum StatusCode {
     CONTINUE(100, null),
     SWITCHING_PROTOCOLS(101, null),
@@ -58,5 +60,19 @@ public enum StatusCode {
         }
 
         return "info";
+    }
+
+    public JsonObject buildObject() {
+        return buildObject(getKeyType(), message);
+    }
+
+    public JsonObject buildObject(String message) {
+        return buildObject(getKeyType(), message);
+    }
+
+    public JsonObject buildObject(String key, String message) {
+        JsonObject object = new JsonObject();
+        object.addProperty(key, message);
+        return object;
     }
 }
