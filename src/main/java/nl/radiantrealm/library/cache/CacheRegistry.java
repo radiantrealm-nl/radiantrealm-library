@@ -1,9 +1,13 @@
 package nl.radiantrealm.library.cache;
 
+import com.google.gson.JsonObject;
 import nl.radiantrealm.library.ApplicationService;
 
 import java.time.Duration;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.*;
 
 public abstract class CacheRegistry<K, V> implements ApplicationService {
@@ -14,22 +18,34 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
     protected final ScheduledExecutorService executorService;
     protected ScheduledFuture<?> task;
 
-    public CacheRegistry(Duration duration) {
-        this.expiryDuration = duration;
+    public CacheRegistry(Duration expiryDuration) {
+        this.expiryDuration = expiryDuration;
         this.executorService = Executors.newSingleThreadScheduledExecutor();
+        this.task = null;
     }
 
     @Override
-    public void start() {
-        ApplicationService.super.start();
+    public void start() throws Exception {
         task = executorService.scheduleAtFixedRate(this::cleanUpCache, expiryDuration.toMillis(), 60000, TimeUnit.MILLISECONDS);
+        preload();
+
+        ApplicationService.super.start();
     }
 
     @Override
-    public void stop() {
-        ApplicationService.super.stop();
+    public void stop() throws Exception {
         task.cancel(false);
-        clear();
+        task = null;
+
+        ApplicationService.super.stop();
+    }
+
+    @Override
+    public JsonObject status() throws Exception {
+        JsonObject object = new JsonObject();
+        object.addProperty("data_size", data.size());
+        object.addProperty("running_since", runningSince.get());
+        return ApplicationService.super.status();
     }
 
     protected void cleanUpCache() {
@@ -54,9 +70,9 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
         return map;
     }
 
-    public V get(K key) throws Exception {
-        if (key == null) throw new IllegalArgumentException("Key cannot be null or empty.");
+    protected void preload() throws Exception {}
 
+    public V get(K key) throws Exception {
         V value = data.get(key);
 
         if (value == null) {
@@ -67,7 +83,7 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
     }
 
     public Map<K, V> get(List<K> keys) throws Exception {
-        if (keys == null || keys.isEmpty()) throw new IllegalArgumentException("Keys cannot be null or empty.");
+        if (keys.isEmpty()) return null;
 
         if (keys.size() == 1) {
             K key = keys.getFirst();
@@ -98,25 +114,36 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
         return cachedKeys;
     }
 
-    public Map<K, V> get(Set<K> keys) throws Exception {
-        return get(keys.stream().toList());
-    }
-
-    public void put(K key, V value) throws IllegalArgumentException {
-        if (key == null) throw new IllegalArgumentException("Key cannot be null or empty.");
-        if (value == null) throw new IllegalArgumentException("Value cannot be null or empty.");
-
+    public void put(K key, V value) {
         data.put(key, value);
         expiry.put(key, System.currentTimeMillis() + expiryDuration.toMillis());
     }
 
+    public void put(Map<K, V> map) {
+        for (Map.Entry<K, V> entry : map.entrySet()) {
+            put(entry.getKey(), entry.getValue());
+        }
+    }
+
     public void remove(K key) {
-        remove(key, null);
+        data.remove(key);
+        expiry.remove(key);
     }
 
     public void remove(K key, V value) {
-        data.remove(key);
-        expiry.remove(key);
+        remove(key);
+    }
+
+    public void remove(List<K> list) {
+        for (K key : list) {
+            remove(key);
+        }
+    }
+
+    public void remove(Map<K, V> map) {
+        for (Map.Entry<K, V> entry : map.entrySet()) {
+            remove(entry.getKey(), entry.getValue());
+        }
     }
 
     public void clear() {
