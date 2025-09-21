@@ -5,11 +5,13 @@ import com.google.gson.JsonObject;
 import nl.radiantrealm.library.http.*;
 import nl.radiantrealm.library.http.server.ApplicationRouter;
 import nl.radiantrealm.library.utils.JsonUtils;
+import nl.radiantrealm.library.utils.Logger;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public abstract class ApplicationController extends ApplicationRouter {
+    protected final Logger logger = Logger.getLogger(this.getClass());
     protected final Map<String, ApplicationService> serviceMap = new HashMap<>();
 
     public ApplicationController(int port) {
@@ -19,7 +21,19 @@ public abstract class ApplicationController extends ApplicationRouter {
     }
 
     protected void registerService(String name, ApplicationService service) {
+        registerService(name, service, false);
+    }
+
+    protected void registerService(String name, ApplicationService service, boolean autoStart) {
         serviceMap.put(name, service);
+
+        if (autoStart) {
+            try {
+                service.start();
+            } catch (Exception e) {
+                logger.error(String.format("Failed to auto start '%s.'", name), e);
+            }
+        }
     }
 
     protected void handlePilotLine(HttpRequest request) throws Exception {
