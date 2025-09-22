@@ -8,16 +8,16 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
-public record JsonUtils(JsonObject object) {
+public record JsonWrapper(JsonObject object) {
     public static final Gson GSON = new Gson();
 
-    public JsonUtils(String string) {
+    public JsonWrapper(String string) {
         this(
                 GSON.fromJson(string, JsonObject.class)
         );
     }
 
-    public JsonUtils(JsonObject object, String key) {
+    public JsonWrapper(JsonObject object, String key) {
         this(
                 object.getAsJsonObject(key)
         );
