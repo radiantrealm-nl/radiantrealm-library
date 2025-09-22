@@ -1,8 +1,5 @@
 package nl.radiantrealm.library.cache;
 
-import com.google.gson.JsonObject;
-import nl.radiantrealm.library.ApplicationService;
-
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.*;
 
-public abstract class CacheRegistry<K, V> implements ApplicationService {
+public abstract class CacheRegistry<K, V> {
     protected final Map<K, V> data = new ConcurrentHashMap<>();
     protected final Map<K, Long> expiry = new ConcurrentHashMap<>();
 
@@ -21,31 +18,11 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
     public CacheRegistry(Duration expiryDuration) {
         this.expiryDuration = expiryDuration;
         this.executorService = Executors.newSingleThreadScheduledExecutor();
-        this.task = null;
+        this.task = buildCleanUpTask();
     }
 
-    @Override
-    public void start() throws Exception {
-        task = executorService.scheduleAtFixedRate(this::cleanUpCache, expiryDuration.toMillis(), 60000, TimeUnit.MILLISECONDS);
-        preload();
-
-        ApplicationService.super.start();
-    }
-
-    @Override
-    public void stop() throws Exception {
-        task.cancel(false);
-        task = null;
-
-        ApplicationService.super.stop();
-    }
-
-    @Override
-    public JsonObject status() throws Exception {
-        JsonObject object = new JsonObject();
-        object.addProperty("data_size", data.size());
-        object.addProperty("running_since", runningSince.get());
-        return ApplicationService.super.status();
+    protected ScheduledFuture<?> buildCleanUpTask() {
+        return executorService.scheduleAtFixedRate(this::cleanUpCache, expiryDuration.toSeconds(), 60, TimeUnit.SECONDS);
     }
 
     protected void cleanUpCache() {
@@ -69,8 +46,6 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
 
         return map;
     }
-
-    protected void preload() throws Exception {}
 
     public V get(K key) throws Exception {
         V value = data.get(key);

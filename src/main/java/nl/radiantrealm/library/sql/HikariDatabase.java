@@ -2,11 +2,10 @@ package nl.radiantrealm.library.sql;
 
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
-import nl.radiantrealm.library.ApplicationService;
 
 import java.sql.Connection;
 
-public abstract class HikariDatabase implements ApplicationService {
+public abstract class HikariDatabase {
     protected static HikariDataSource dataSource;
 
     protected abstract String databaseURL();
@@ -14,7 +13,7 @@ public abstract class HikariDatabase implements ApplicationService {
     protected abstract String databasePassword();
 
     public HikariDatabase() {
-        HikariDatabase.dataSource = null;
+        HikariDatabase.dataSource = buildDataSource();
     }
 
     protected HikariDataSource buildDataSource() {
@@ -27,19 +26,6 @@ public abstract class HikariDatabase implements ApplicationService {
         return new HikariDataSource(config);
     }
 
-    @Override
-    public void start() throws Exception {
-        dataSource = buildDataSource();
-        ApplicationService.super.start();
-    }
-
-    @Override
-    public void stop() throws Exception {
-        dataSource.close();
-        dataSource = null;
-        ApplicationService.super.stop();
-    }
-
     public static Connection getConnection(boolean autoCommit) throws Exception {
         if (dataSource == null) {
             throw new Exception("Database offline.");
@@ -50,7 +36,7 @@ public abstract class HikariDatabase implements ApplicationService {
         return connection;
     }
 
-    public static Connection getConnection(Connection connection) throws Exception {
+    public static Connection getConnection() throws Exception {
         return getConnection(false);
     }
 }
