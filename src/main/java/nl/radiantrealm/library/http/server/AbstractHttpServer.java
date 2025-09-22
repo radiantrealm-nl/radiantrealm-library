@@ -5,7 +5,6 @@ import nl.radiantrealm.library.http.enumerator.StatusCode;
 import nl.radiantrealm.library.http.model.HttpException;
 import nl.radiantrealm.library.http.handler.HttpHandler;
 import nl.radiantrealm.library.http.model.HttpRequest;
-import nl.radiantrealm.library.http.model.HttpResponse;
 import nl.radiantrealm.library.utils.Logger;
 
 import java.net.InetSocketAddress;
@@ -48,17 +47,7 @@ public abstract class AbstractHttpServer {
                 try {
                     handler.handle(request);
                 } catch (HttpException e) {
-                    HttpResponse response = e.response;
-
-                    if (response == null) {
-                        request.sendStatusResponse(StatusCode.BAD_REQUEST, "No context.");
-                    } else {
-                        request.sendResponse(
-                                response.statusCode(),
-                                response.mediaType(),
-                                response.responseBody()
-                        );
-                    }
+                    request.sendResponse(e.response);
                 } catch (Exception e) {
                     logger.error(String.format("Unexpected error while handling request at '%s' for port '%s'.", path, port), e);
                     request.sendStatusResponse(StatusCode.SERVER_ERROR);

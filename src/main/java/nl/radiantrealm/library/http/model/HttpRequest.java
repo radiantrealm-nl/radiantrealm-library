@@ -40,11 +40,27 @@ public record HttpRequest(HttpExchange exchange, InputStream inputStream, Output
     }
 
     public void sendResponse(StatusCode statusCode, MediaType mediaType, String body) throws Exception {
-        sendResponse(statusCode.code, mediaType.type, body);
+        sendResponse(
+                statusCode.code,
+                mediaType.type,
+                body
+        );
     }
 
     public void sendResponse(StatusCode statusCode, JsonObject object) throws Exception {
-        sendResponse(statusCode.code, MediaType.JSON.type, object == null ? "{}" : object.getAsString());
+        sendResponse(
+                statusCode.code,
+                MediaType.JSON.type,
+                object == null ? "{}" : object.getAsString()
+        );
+    }
+
+    public void sendResponse(HttpResponse response) throws Exception {
+        sendResponse(
+                response.statusCode(),
+                response.mediaType(),
+                response.responseBody()
+        );
     }
 
     public void sendStatusResponse(StatusCode statusCode, String key, String message) throws Exception {
