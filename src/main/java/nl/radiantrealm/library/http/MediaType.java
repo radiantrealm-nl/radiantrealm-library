@@ -1,6 +1,6 @@
 package nl.radiantrealm.library.http;
 
-public enum MimeType {
+public enum MediaType {
     TEXT("text/plain"),
     HTML("text/html"),
     CSS("text/css"),
@@ -26,11 +26,7 @@ public enum MimeType {
 
     public final String type;
 
-    MimeType(String type) {
+    MediaType(String type) {
         this.type = type;
-    }
-
-    public String getType() {
-        return type;
     }
 }
