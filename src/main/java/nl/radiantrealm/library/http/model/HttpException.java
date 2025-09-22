@@ -1,4 +1,4 @@
-package nl.radiantrealm.library.http;
+package nl.radiantrealm.library.http.model;
 
 import nl.radiantrealm.library.utils.ThrowingBiFunction;
 import nl.radiantrealm.library.utils.ThrowingFunction;

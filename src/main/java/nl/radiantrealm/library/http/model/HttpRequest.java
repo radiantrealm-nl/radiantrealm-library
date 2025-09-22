@@ -1,8 +1,11 @@
-package nl.radiantrealm.library.http;
+package nl.radiantrealm.library.http.model;
 
 import com.google.gson.JsonObject;
 import com.sun.net.httpserver.Headers;
 import com.sun.net.httpserver.HttpExchange;
+import nl.radiantrealm.library.http.enumerator.HttpMethod;
+import nl.radiantrealm.library.http.enumerator.MediaType;
+import nl.radiantrealm.library.http.enumerator.StatusCode;
 
 import java.io.BufferedReader;
 import java.io.InputStream;

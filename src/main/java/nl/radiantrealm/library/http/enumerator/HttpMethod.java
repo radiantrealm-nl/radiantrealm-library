@@ -1,4 +1,4 @@
-package nl.radiantrealm.library.http;
+package nl.radiantrealm.library.http.enumerator;
 
 public enum HttpMethod {
     GET,

@@ -1,7 +1,7 @@
 package nl.radiantrealm.library.processor;
 
 import com.google.gson.JsonObject;
-import nl.radiantrealm.library.http.StatusCode;
+import nl.radiantrealm.library.http.enumerator.StatusCode;
 import nl.radiantrealm.library.utils.JsonUtils;
 
 import java.util.Optional;

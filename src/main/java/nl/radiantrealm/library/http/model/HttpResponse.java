@@ -1,6 +1,8 @@
-package nl.radiantrealm.library.http;
+package nl.radiantrealm.library.http.model;
 
 import com.google.gson.JsonObject;
+import nl.radiantrealm.library.http.enumerator.MediaType;
+import nl.radiantrealm.library.http.enumerator.StatusCode;
 
 public record HttpResponse(int statusCode, String mediaType, String responseBody) {
 
