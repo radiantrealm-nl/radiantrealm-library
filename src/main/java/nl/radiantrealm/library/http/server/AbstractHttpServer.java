@@ -1,16 +1,17 @@
-package nl.radiantrealm.library.http;
+package nl.radiantrealm.library.http.server;
 
 import com.sun.net.httpserver.HttpServer;
+import nl.radiantrealm.library.http.*;
 import nl.radiantrealm.library.utils.Logger;
 
 import java.net.InetSocketAddress;
 
-public abstract class HttpRouter {
+public abstract class AbstractHttpServer {
     protected final Logger logger = Logger.getLogger(this.getClass());
     protected final HttpServer server;
     protected final int port;
 
-    public HttpRouter(int port) {
+    public AbstractHttpServer(int port) {
         this.server = createHttpServer();
         this.port = port;
 
