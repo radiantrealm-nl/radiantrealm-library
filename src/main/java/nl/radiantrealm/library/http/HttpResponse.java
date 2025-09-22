@@ -2,12 +2,12 @@ package nl.radiantrealm.library.http;
 
 import com.google.gson.JsonObject;
 
-public record HttpResponse(int statusCode, MimeType mimeType, String responseBody) {
+public record HttpResponse(int statusCode, String mediaType, String responseBody) {
 
     public HttpResponse(StatusCode statusCode, JsonObject object) {
         this(
                 statusCode.code,
-                MimeType.JSON,
+                MediaType.JSON.type,
                 object.getAsString()
         );
     }
@@ -15,21 +15,21 @@ public record HttpResponse(int statusCode, MimeType mimeType, String responseBod
     public HttpResponse(StatusCode statusCode) {
         this(
                 statusCode,
-                statusCode.buildObject()
+                statusCode.toJson()
         );
     }
 
     public HttpResponse(StatusCode statusCode, String message) {
         this(
                 statusCode,
-                statusCode.buildObject(message)
+                statusCode.toJson(message)
         );
     }
 
     public HttpResponse(StatusCode statusCode, String key, String message) {
         this(
                 statusCode,
-                statusCode.buildObject(key, message)
+                statusCode.toJson(key, message)
         );
     }
 }
