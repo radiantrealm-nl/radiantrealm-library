@@ -1,115 +1,130 @@
 package nl.radiantrealm.library.utils;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
+import com.google.gson.*;
 
 import java.math.BigDecimal;
-import java.util.*;
-import java.util.function.BiFunction;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 
-public class JsonUtils {
-    private static final Gson gson = new Gson();
+public record JsonUtils(JsonObject object) {
+    public static final Gson GSON = new Gson();
 
-    private JsonUtils() {}
-
-    public static JsonObject getJsonObject(String string) throws IllegalArgumentException {
-        if (string == null) throw new IllegalArgumentException("Input value for JSON object cannot be null or empty.");
-
-        return gson.fromJson(string, JsonObject.class);
+    public JsonUtils(String string) {
+        this(
+                GSON.fromJson(string, JsonObject.class)
+        );
     }
 
-    public static JsonArray getJsonArray(String string) throws IllegalArgumentException {
-        if (string == null) throw new IllegalArgumentException("Input value for JSON array cannot be null or empty.");
-
-        return gson.fromJson(string, JsonArray.class);
+    public JsonUtils(JsonObject object, String key) {
+        this(
+                object.getAsJsonObject(key)
+        );
     }
 
-    public static JsonArray getJsonArray(JsonObject object, String key) throws IllegalArgumentException {
-        JsonElement element = getJsonElement(object, key);
-
-        if (element == null) {
-            throw new IllegalArgumentException(String.format("Key '%s' not found in JSON object.", key));
-        }
-
-        if (!element.isJsonArray()) {
-            throw new IllegalArgumentException(String.format("Element at key '%s' is not a JSON array.", key));
-        }
-
-        return element.getAsJsonArray();
+    @Override
+    public String toString() {
+        return object.getAsString();
     }
 
-    public static JsonObject getJsonObject(JsonObject object, String key) throws IllegalArgumentException {
-        JsonElement element = getJsonElement(object, key);
-
-        if (element == null) {
-            throw new IllegalArgumentException(String.format("Key '%s' not found in JSON object.", key));
-        }
-
-        if (!element.isJsonObject()) {
-            throw new IllegalArgumentException(String.format("Element at key '%s' is not a JSON object.", key));
-        }
-
-        return element.getAsJsonObject();
+    public JsonObject getJsonObject(String key) {
+        return object.getAsJsonObject(key);
     }
 
-    public static JsonElement getJsonElement(JsonObject object, String key) throws IllegalArgumentException {
-        if (object == null) throw new IllegalArgumentException("JSON object cannot be null.");
-        if (key == null) throw new IllegalArgumentException("Key for JSON element cannot be null or empty.");
+    public JsonArray getJsonArray(String key) {
+        return object.getAsJsonArray(key);
+    }
 
+    public JsonElement getJsonElement(String key) {
         return object.get(key);
     }
 
-    public static BigDecimal getJsonBigDecimal(JsonObject object, String key) throws IllegalArgumentException {
-        return FormatUtils.formatBigDecimal(getJsonString(object, key));
-    }
-
-    public static <T extends Enum<T>> T getJsonEnum(Class<T> enumerator, JsonObject object, String key) throws IllegalArgumentException {
-        return FormatUtils.formatEnum(enumerator, getJsonString(object, key));
-    }
-
-    public static Integer getJsonInteger(JsonObject object, String key) throws IllegalArgumentException {
-        return FormatUtils.formatInteger(getJsonString(object, key));
-    }
-
-    public static Long getJsonLong(JsonObject object, String key) throws IllegalArgumentException {
-        return FormatUtils.formatLong(getJsonString(object, key));
-    }
-
-    public static String getJsonString(JsonObject object, String key) throws IllegalArgumentException {
-        JsonElement element = getJsonElement(object, key);
+    public BigDecimal getBigDecimal(String key) {
+        JsonElement element = object.get(key);
 
         if (element == null) {
-            throw new IllegalArgumentException(String.format("Key '%s' not found in JSON object.", key));
+            return null;
         }
 
-        return element.getAsString();
+        return element.getAsBigDecimal();
     }
 
-    public static UUID getJsonUUID(JsonObject object, String key) throws IllegalArgumentException {
-        return FormatUtils.formatUUID(getJsonString(object, key));
+    public Boolean getBoolean(String key) {
+        JsonPrimitive primitive = object.getAsJsonPrimitive(key);
+
+        if (primitive == null) {
+            return null;
+        }
+
+        if (primitive.isBoolean()) {
+            return primitive.getAsBoolean();
+        }
+
+        return FormatUtils.formatBoolean(primitive.getAsString());
     }
 
-    public static <K, V> Map<K, V> getJsonMap(JsonObject object, BiFunction<String, JsonElement, Map.Entry<K, V>> function) throws IllegalArgumentException {
+    public <T extends Enum<T>> T getEnum(Class<T> enumerator, String key) {
+        JsonPrimitive primitive = object.getAsJsonPrimitive(key);
+
+        if (primitive == null) {
+            return null;
+        }
+
+        return FormatUtils.formatEnum(enumerator, primitive.getAsString());
+    }
+
+    public Integer getInteger(String key) {
+        JsonPrimitive primitive = object.getAsJsonPrimitive(key);
+
+        if (primitive == null) {
+            return null;
+        }
+
+        return primitive.getAsInt();
+    }
+
+    public Long getLong(String key) {
+        JsonPrimitive primitive = object.getAsJsonPrimitive(key);
+
+        if (primitive == null) {
+            return null;
+        }
+
+        return primitive.getAsLong();
+    }
+
+    public static <K, V> Map<K, V> getMap(JsonObject object, Function<String, K> key, Function<JsonElement, V> value) {
         Map<K, V> map = new HashMap<>(object.size());
 
         for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
-            Map.Entry<K, V> parsedEntry = function.apply(entry.getKey(), entry.getValue());
-            map.put(parsedEntry.getKey(), parsedEntry.getValue());
+            map.put(key.apply(entry.getKey()), value.apply(entry.getValue()));
         }
 
         return map;
     }
 
-    public static <T> List<T> getJsonList(JsonArray array, Function<JsonElement, T> function) throws IllegalArgumentException {
-        List<T> list = new ArrayList<>(array.size());
+    public <K, V> Map<K, V> getMap(Function<String, K> key, Function<JsonElement, V> value) {
+        return getMap(object, key, value);
+    }
 
-        for (JsonElement element : array) {
-            list.add(function.apply(element));
+    public String getString(String key) {
+        JsonPrimitive primitive = object.getAsJsonPrimitive(key);
+
+        if (primitive == null) {
+            return null;
         }
 
-        return list;
+        return primitive.getAsString();
+    }
+
+    public UUID getUUID(String key) {
+        JsonPrimitive primitive = object.getAsJsonPrimitive(key);
+
+        if (primitive == null) {
+            return null;
+        }
+
+        return UUID.fromString(primitive.getAsString());
     }
 }
