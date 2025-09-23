@@ -12,9 +12,9 @@ import java.security.KeyStore;
 import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 
-public class ClientBuilder {
+public class HttpClientBuilder {
 
-    private ClientBuilder() {}
+    private HttpClientBuilder() {}
 
     public static HttpClient buildHttpClient(SSLContext context) throws Exception {
         return HttpClient.newBuilder()
