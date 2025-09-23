@@ -1,56 +1,26 @@
-package nl.radiantrealm.library.utils;
+package nl.radiantrealm.library.utils.json;
 
 import com.google.gson.*;
+import nl.radiantrealm.library.utils.FormatUtils;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.function.Function;
 
-public record JsonWrapper(JsonObject object) {
+public class JsonUtils {
     public static final Gson GSON = new Gson();
 
-    public JsonWrapper(String string) {
-        this(
-                GSON.fromJson(string, JsonObject.class)
-        );
-    }
+    public static BigDecimal getBigDecimal(JsonObject object, String key) {
+        JsonPrimitive primitive = object.getAsJsonPrimitive(key);
 
-    public JsonWrapper(JsonObject object, String key) {
-        this(
-                object.getAsJsonObject(key)
-        );
-    }
-
-    @Override
-    public String toString() {
-        return object.getAsString();
-    }
-
-    public JsonObject getJsonObject(String key) {
-        return object.getAsJsonObject(key);
-    }
-
-    public JsonArray getJsonArray(String key) {
-        return object.getAsJsonArray(key);
-    }
-
-    public JsonElement getJsonElement(String key) {
-        return object.get(key);
-    }
-
-    public BigDecimal getBigDecimal(String key) {
-        JsonElement element = object.get(key);
-
-        if (element == null) {
+        if (primitive == null) {
             return null;
         }
 
-        return element.getAsBigDecimal();
+        return primitive.getAsBigDecimal();
     }
 
-    public Boolean getBoolean(String key) {
+    public static Boolean getBoolean(JsonObject object, String key) {
         JsonPrimitive primitive = object.getAsJsonPrimitive(key);
 
         if (primitive == null) {
@@ -64,7 +34,7 @@ public record JsonWrapper(JsonObject object) {
         return FormatUtils.formatBoolean(primitive.getAsString());
     }
 
-    public <T extends Enum<T>> T getEnum(Class<T> enumerator, String key) {
+    public static <T extends Enum<T>> T getEnum(JsonObject object, Class<T> enumerator, String key) {
         JsonPrimitive primitive = object.getAsJsonPrimitive(key);
 
         if (primitive == null) {
@@ -74,7 +44,7 @@ public record JsonWrapper(JsonObject object) {
         return FormatUtils.formatEnum(enumerator, primitive.getAsString());
     }
 
-    public Integer getInteger(String key) {
+    public static Integer getInteger(JsonObject object, String key) {
         JsonPrimitive primitive = object.getAsJsonPrimitive(key);
 
         if (primitive == null) {
@@ -84,7 +54,17 @@ public record JsonWrapper(JsonObject object) {
         return primitive.getAsInt();
     }
 
-    public Long getLong(String key) {
+    public static <T> List<T> getList(JsonArray array, Function<JsonElement, T> function) {
+        List<T> list = new ArrayList<>(array.size());
+
+        for (JsonElement element : array) {
+            list.add(function.apply(element));
+        }
+
+        return list;
+    }
+
+    public static Long getLong(JsonObject object, String key) {
         JsonPrimitive primitive = object.getAsJsonPrimitive(key);
 
         if (primitive == null) {
@@ -104,11 +84,7 @@ public record JsonWrapper(JsonObject object) {
         return map;
     }
 
-    public <K, V> Map<K, V> getMap(Function<String, K> key, Function<JsonElement, V> value) {
-        return getMap(object, key, value);
-    }
-
-    public String getString(String key) {
+    public static String getString(JsonObject object, String key) {
         JsonPrimitive primitive = object.getAsJsonPrimitive(key);
 
         if (primitive == null) {
@@ -118,7 +94,7 @@ public record JsonWrapper(JsonObject object) {
         return primitive.getAsString();
     }
 
-    public UUID getUUID(String key) {
+    public static UUID getUUID(JsonObject object, String key) {
         JsonPrimitive primitive = object.getAsJsonPrimitive(key);
 
         if (primitive == null) {
