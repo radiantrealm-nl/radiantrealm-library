@@ -1,4 +1,4 @@
-package nl.radiantrealm.library.utils;
+package nl.radiantrealm.library.utils.format;
 
 import java.math.BigDecimal;
 import java.nio.charset.Charset;

@@ -1,4 +1,4 @@
-package nl.radiantrealm.library.utils;
+package nl.radiantrealm.library.utils.dto;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;

@@ -1,7 +1,7 @@
 package nl.radiantrealm.library.utils.json;
 
 import com.google.gson.*;
-import nl.radiantrealm.library.utils.FormatUtils;
+import nl.radiantrealm.library.utils.format.FormatUtils;
 
 import java.math.BigDecimal;
 import java.util.*;

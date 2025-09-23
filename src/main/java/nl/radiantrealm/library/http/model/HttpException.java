@@ -1,7 +1,7 @@
 package nl.radiantrealm.library.http.model;
 
-import nl.radiantrealm.library.utils.ThrowingBiFunction;
-import nl.radiantrealm.library.utils.ThrowingFunction;
+import nl.radiantrealm.library.utils.function.ThrowingBiFunction;
+import nl.radiantrealm.library.utils.function.ThrowingFunction;
 
 public class HttpException extends Exception {
     public final HttpResponse response;

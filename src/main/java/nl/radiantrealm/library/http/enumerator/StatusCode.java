@@ -1,7 +1,7 @@
 package nl.radiantrealm.library.http.enumerator;
 
 import com.google.gson.JsonObject;
-import nl.radiantrealm.library.utils.DataObject;
+import nl.radiantrealm.library.utils.dto.DataObject;
 
 public enum StatusCode implements DataObject {
     CONTINUE(100, null),

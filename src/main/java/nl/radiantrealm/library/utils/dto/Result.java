@@ -1,4 +1,7 @@
-package nl.radiantrealm.library.utils;
+package nl.radiantrealm.library.utils.dto;
+
+import nl.radiantrealm.library.utils.function.ThrowingBiFunction;
+import nl.radiantrealm.library.utils.function.ThrowingFunction;
 
 import java.util.Optional;
 import java.util.function.BiFunction;
