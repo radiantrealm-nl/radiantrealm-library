@@ -1,10 +1,9 @@
 package nl.radiantrealm.library.cache;
 
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
+
 import java.time.Duration;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 
 public abstract class CacheRegistry<K, V> {
@@ -30,14 +29,14 @@ public abstract class CacheRegistry<K, V> {
 
         for (Map.Entry<K, Long> entry : expiry.entrySet()) {
             if (timestamp > entry.getValue()) {
-                remove(entry.getKey(), data.get(entry.getKey()));
+                remove(entry.getKey());
             }
         }
     }
 
     protected abstract V load(K key) throws Exception;
 
-    protected Map<K, V> load(List<K> keys) throws Exception {
+    protected Map<K, V> load(Collection<K> keys) throws Exception {
         Map<K, V> map = new HashMap<>(keys.size());
 
         for (K key : keys) {
@@ -57,17 +56,17 @@ public abstract class CacheRegistry<K, V> {
         return value;
     }
 
-    public Map<K, V> get(List<K> keys) throws Exception {
+    public Map<K, V> get(Collection<K> keys) throws Exception {
         if (keys.isEmpty()) return null;
 
         if (keys.size() == 1) {
-            K key = keys.getFirst();
+            K key = keys.iterator().next();
             V value = get(key);
             return Map.of(key, value);
         }
 
         Map<K, V> cachedKeys = new HashMap<>(keys.size());
-        List<K> loadKeys = new ArrayList<>();
+        Collection<K> loadKeys = new HashSet<>();
 
         for (K key : keys) {
             V value = data.get(key);
@@ -100,25 +99,21 @@ public abstract class CacheRegistry<K, V> {
         }
     }
 
-    public void remove(K key) {
-        data.remove(key);
+    @CanIgnoreReturnValue
+    public V remove(K key) {
         expiry.remove(key);
+        return data.remove(key);
     }
 
-    public void remove(K key, V value) {
-        remove(key);
-    }
+    @CanIgnoreReturnValue
+    public Collection<V> remove(Collection<K> keys) {
+        Collection<V> collection = new HashSet<>(keys.size());
 
-    public void remove(List<K> list) {
-        for (K key : list) {
-            remove(key);
+        for (K key : keys) {
+            collection.add(remove(key));
         }
-    }
 
-    public void remove(Map<K, V> map) {
-        for (Map.Entry<K, V> entry : map.entrySet()) {
-            remove(entry.getKey(), entry.getValue());
-        }
+        return collection;
     }
 
     public void clear() {
