@@ -115,10 +115,6 @@ public record HttpRequest(HttpExchange exchange, InputStream inputStream, Output
                 .collect(Collectors.joining("\n"));
     }
 
-    public void aeb() {
-        HttpMethod quiet = HttpMethod.valueOf("");
-    }
-
     public Headers getRequestHeaders() {
         return exchange.getRequestHeaders();
     }
