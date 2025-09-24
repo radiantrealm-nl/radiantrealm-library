@@ -19,7 +19,7 @@ public abstract class AbstractHttpServer {
         this.port = port;
 
         if (server == null) {
-            logger.error(String.format("Cannot to start HTTP server on port '%s'. HTTP server is not initialized.", port));
+            logger.error(String.format("Cannot start HTTP server on port '%s'. HTTP server is not initialized.", port));
         } else {
             server.start();
         }
@@ -36,7 +36,7 @@ public abstract class AbstractHttpServer {
 
     protected void register(HttpHandler handler, String path) {
         if (server == null) {
-            logger.error(String.format("Cannot register handler at '%s' for port '%s'. HTTP server is not initialized.", path, port));
+            logger.error(String.format("Cannot register handler at path '%s' on port '%s'. HTTP server is not initialized.", path, port));
             return;
         }
 
@@ -49,11 +49,11 @@ public abstract class AbstractHttpServer {
                 } catch (HttpException e) {
                     request.sendResponse(e.response);
                 } catch (Exception e) {
-                    logger.error(String.format("Unexpected error while handling request at '%s' for port '%s'.", path, port), e);
+                    logger.error(String.format("Unexpected error while handling request at path '%s' on port '%s'.", path, port), e);
                     request.sendStatusResponse(StatusCode.SERVER_ERROR);
                 }
             } catch (Exception e) {
-                logger.error(String.format("Failed to send response at '%s' for port '%s'.", path, port), e);
+                logger.error(String.format("Failed to send response at path '%s' on port '%s'.", path, port), e);
             }
         });
     }
