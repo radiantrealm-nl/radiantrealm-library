@@ -1,4 +1,4 @@
-package nl.radiantrealm.library.utils;
+package nl.radiantrealm.library.utils.format;
 
 import java.math.BigDecimal;
 import java.nio.charset.Charset;
@@ -11,40 +11,39 @@ public class FormatUtils {
 
     private FormatUtils() {}
 
-    public static BigDecimal formatBigDecimal(String string) throws IllegalArgumentException {
-        if (string == null) throw new IllegalArgumentException("Input value for BigDecimal cannot be null or empty.");
+    public static BigDecimal formatBigDecimal(Number number) {
+        if (number == null) return null;
 
-        return new BigDecimal(string);
+        if (number instanceof BigDecimal decimal) {
+            return decimal;
+        }
+
+        return new BigDecimal(number.toString());
     }
 
-    public static Boolean formatBoolean(String string) throws IllegalArgumentException {
-        if (string == null) throw new IllegalArgumentException("Input value for boolean cannot be null or empty.");
-
+    public static boolean formatBoolean(String string) {
         return switch (string.toUpperCase()) {
             case "FALSE" -> false;
             case "TRUE" -> true;
-            default -> throw new IllegalArgumentException(String.format("Invalid boolean value '%s'.", string));
+            default -> throw new IllegalArgumentException("Invalid boolean value.");
         };
     }
 
-    public static Boolean formatBoolean(Integer integer) throws IllegalArgumentException {
-        if (integer == null) throw new IllegalArgumentException("Input value for boolean cannot be null or empty.");
-
-        return switch (integer) {
+    public static boolean formatBoolean(int i) {
+        return switch (i) {
             case 0 -> false;
             case 1 -> true;
-            default -> throw new IllegalArgumentException(String.format("Invalid boolean value '%d'.", integer));
+            default -> throw new IllegalArgumentException("Invalid boolean value.");
         };
     }
 
-    public static <T extends Enum<T>> T formatEnum(Class<T> enumerator, String string) throws IllegalArgumentException, ClassCastException {
-        if (enumerator == null) throw new ClassCastException("Enumerator class cannot be null.");
-        if (string == null) throw new IllegalArgumentException("Input value for enum cannot be null or empty..");
-
+    public static <T extends Enum<T>> T formatEnum(Class<T> enumerator, String string) {
         return Enum.valueOf(enumerator, string);
     }
 
-    public static <T extends Enum<T>> T formatEnum(Class<T> enumerator, ResultSet resultSet, String key) throws IllegalArgumentException, ClassCastException, SQLException {
+    public static UUID formatUUID(ResultSet rs, String key) throws SQLException {
+        return UUID.fromString(rs.getString(key));
+    }    public static <T extends Enum<T>> T formatEnum(Class<T> enumerator, ResultSet resultSet, String key) throws IllegalArgumentException, ClassCastException, SQLException {
         return formatEnum(enumerator, resultSet.getString(key));
     }
 
@@ -71,9 +70,5 @@ public class FormatUtils {
         if (string == null) throw new IllegalArgumentException("Input value for UUID cannot be null or empty.");
 
         return UUID.fromString(string);
-    }
-
-    public static UUID formatUUID(ResultSet resultSet, String key) throws SQLException {
-        return formatUUID(resultSet.getString(key));
     }
 }

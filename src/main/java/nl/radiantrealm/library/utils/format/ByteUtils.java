@@ -1,4 +1,4 @@
-package nl.radiantrealm.library.utils;
+package nl.radiantrealm.library.utils.format;
 
 public class ByteUtils {
 

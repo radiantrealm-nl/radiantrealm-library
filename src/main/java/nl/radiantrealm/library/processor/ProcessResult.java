@@ -1,18 +1,15 @@
 package nl.radiantrealm.library.processor;
 
 import com.google.gson.JsonObject;
-import nl.radiantrealm.library.http.StatusCode;
-import nl.radiantrealm.library.utils.JsonUtils;
+import nl.radiantrealm.library.http.enumerator.StatusCode;
+import nl.radiantrealm.library.utils.dto.DataObject;
 
 import java.util.Optional;
 
-public record ProcessResult(boolean success, int code, Optional<JsonObject> object, Optional<Exception> exception) {
+public record ProcessResult(boolean success, int code, Optional<JsonObject> object, Optional<Exception> exception) implements DataObject {
 
-    public String getErrorMessage() throws IllegalArgumentException {
-        return object.map(jsonObject -> JsonUtils.getJsonString(jsonObject, "error")).orElse(null);
-    }
-
-    public JsonObject toJson() {
+    @Override
+    public JsonObject toJson() throws IllegalStateException {
         JsonObject jsonObject = object.orElse(new JsonObject());
         jsonObject.addProperty("success", success);
         jsonObject.addProperty("code", code);
@@ -28,12 +25,13 @@ public record ProcessResult(boolean success, int code, Optional<JsonObject> obje
         );
     }
 
-    public static ProcessResult error(StatusCode code, String error) {
-        return error(code.code, error);
-    }
-
-    public static ProcessResult error(StatusCode code, String error, Exception e) {
-        return error(code.code, error, e);
+    public static ProcessResult ok(JsonObject object) {
+        return new ProcessResult(
+                true,
+                200,
+                Optional.of(object),
+                Optional.empty()
+        );
     }
 
     public static ProcessResult error(int code, String error) {
@@ -48,6 +46,10 @@ public record ProcessResult(boolean success, int code, Optional<JsonObject> obje
         );
     }
 
+    public static ProcessResult error(StatusCode statusCode, String error) {
+        return error(statusCode.code, error);
+    }
+
     public static ProcessResult error(int code, String error, Exception e) {
         JsonObject jsonObject = new JsonObject();
         jsonObject.addProperty("error", error);
@@ -58,5 +60,9 @@ public record ProcessResult(boolean success, int code, Optional<JsonObject> obje
                 Optional.of(jsonObject),
                 Optional.of(e)
         );
+    }
+
+    public static ProcessResult error(StatusCode statusCode, String error, Exception e) {
+        return error(statusCode.code, error, e);
     }
 }

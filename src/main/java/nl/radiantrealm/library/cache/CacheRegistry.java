@@ -1,12 +1,12 @@
 package nl.radiantrealm.library.cache;
 
-import nl.radiantrealm.library.ApplicationService;
+import com.google.errorprone.annotations.CanIgnoreReturnValue;
 
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
 
-public abstract class CacheRegistry<K, V> implements ApplicationService {
+public abstract class CacheRegistry<K, V> {
     protected final Map<K, V> data = new ConcurrentHashMap<>();
     protected final Map<K, Long> expiry = new ConcurrentHashMap<>();
 
@@ -14,22 +14,14 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
     protected final ScheduledExecutorService executorService;
     protected ScheduledFuture<?> task;
 
-    public CacheRegistry(Duration duration) {
-        this.expiryDuration = duration;
+    public CacheRegistry(Duration expiryDuration) {
+        this.expiryDuration = expiryDuration;
         this.executorService = Executors.newSingleThreadScheduledExecutor();
+        this.task = buildCleanUpTask();
     }
 
-    @Override
-    public void start() {
-        ApplicationService.super.start();
-        task = executorService.scheduleAtFixedRate(this::cleanUpCache, expiryDuration.toMillis(), 60000, TimeUnit.MILLISECONDS);
-    }
-
-    @Override
-    public void stop() {
-        ApplicationService.super.stop();
-        task.cancel(false);
-        clear();
+    protected ScheduledFuture<?> buildCleanUpTask() {
+        return executorService.scheduleAtFixedRate(this::cleanUpCache, expiryDuration.toSeconds(), 60, TimeUnit.SECONDS);
     }
 
     protected void cleanUpCache() {
@@ -37,14 +29,14 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
 
         for (Map.Entry<K, Long> entry : expiry.entrySet()) {
             if (timestamp > entry.getValue()) {
-                remove(entry.getKey(), data.get(entry.getKey()));
+                remove(entry.getKey());
             }
         }
     }
 
     protected abstract V load(K key) throws Exception;
 
-    protected Map<K, V> load(List<K> keys) throws Exception {
+    protected Map<K, V> load(Collection<K> keys) throws Exception {
         Map<K, V> map = new HashMap<>(keys.size());
 
         for (K key : keys) {
@@ -55,8 +47,6 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
     }
 
     public V get(K key) throws Exception {
-        if (key == null) throw new IllegalArgumentException("Key cannot be null or empty.");
-
         V value = data.get(key);
 
         if (value == null) {
@@ -66,17 +56,17 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
         return value;
     }
 
-    public Map<K, V> get(List<K> keys) throws Exception {
-        if (keys == null || keys.isEmpty()) throw new IllegalArgumentException("Keys cannot be null or empty.");
+    public Map<K, V> get(Collection<K> keys) throws Exception {
+        if (keys.isEmpty()) return null;
 
         if (keys.size() == 1) {
-            K key = keys.getFirst();
+            K key = keys.iterator().next();
             V value = get(key);
             return Map.of(key, value);
         }
 
         Map<K, V> cachedKeys = new HashMap<>(keys.size());
-        List<K> loadKeys = new ArrayList<>();
+        Collection<K> loadKeys = new HashSet<>();
 
         for (K key : keys) {
             V value = data.get(key);
@@ -98,25 +88,32 @@ public abstract class CacheRegistry<K, V> implements ApplicationService {
         return cachedKeys;
     }
 
-    public Map<K, V> get(Set<K> keys) throws Exception {
-        return get(keys.stream().toList());
-    }
-
-    public void put(K key, V value) throws IllegalArgumentException {
-        if (key == null) throw new IllegalArgumentException("Key cannot be null or empty.");
-        if (value == null) throw new IllegalArgumentException("Value cannot be null or empty.");
-
+    public void put(K key, V value) {
         data.put(key, value);
         expiry.put(key, System.currentTimeMillis() + expiryDuration.toMillis());
     }
 
-    public void remove(K key) {
-        remove(key, null);
+    public void put(Map<K, V> map) {
+        for (Map.Entry<K, V> entry : map.entrySet()) {
+            put(entry.getKey(), entry.getValue());
+        }
     }
 
-    public void remove(K key, V value) {
-        data.remove(key);
+    @CanIgnoreReturnValue
+    public V remove(K key) {
         expiry.remove(key);
+        return data.remove(key);
+    }
+
+    @CanIgnoreReturnValue
+    public Collection<V> remove(Collection<K> keys) {
+        Collection<V> collection = new HashSet<>(keys.size());
+
+        for (K key : keys) {
+            collection.add(remove(key));
+        }
+
+        return collection;
     }
 
     public void clear() {
