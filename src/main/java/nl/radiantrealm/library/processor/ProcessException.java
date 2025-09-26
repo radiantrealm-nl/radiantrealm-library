@@ -1,5 +1,10 @@
 package nl.radiantrealm.library.processor;
 
+import nl.radiantrealm.library.http.model.HttpException;
+import nl.radiantrealm.library.http.model.HttpResponse;
+import nl.radiantrealm.library.utils.function.ThrowingBiFunction;
+import nl.radiantrealm.library.utils.function.ThrowingFunction;
+
 public class ProcessException extends Exception {
     public final ProcessResult result;
 
