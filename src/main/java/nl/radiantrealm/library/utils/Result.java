@@ -1,7 +1,9 @@
-package nl.radiantrealm.library.utils.dto;
+package nl.radiantrealm.library.utils;
 
+import nl.radiantrealm.library.utils.function.NilFunction;
 import nl.radiantrealm.library.utils.function.ThrowingBiFunction;
 import nl.radiantrealm.library.utils.function.ThrowingFunction;
+import nl.radiantrealm.library.utils.function.ThrowingNilFunction;
 
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -35,6 +37,10 @@ public record Result<T>(Optional<T> object, Optional<Exception> exception) {
         }
     }
 
+    public static <R> R function(NilFunction<R> function) {
+        return function.apply();
+    }
+
     public static <T, R> R function(Function<T, R> function, T arg1) {
         return function.apply(arg1);
     }
@@ -43,12 +49,24 @@ public record Result<T>(Optional<T> object, Optional<Exception> exception) {
         return function.apply(arg1, arg2);
     }
 
+    public static <R> R tryFunction(ThrowingNilFunction<R> function) throws Exception {
+        return function.apply();
+    }
+
     public static <T, R> R tryFunction(ThrowingFunction<T, R> function, T arg1) throws Exception {
         return function.apply(arg1);
     }
 
     public static <T, U, R> R tryFunction(ThrowingBiFunction<T, U, R> function, T arg1, U arg2) throws Exception {
         return function.apply(arg1, arg2);
+    }
+
+    public static <R> Result<R> tryCatch(ThrowingNilFunction<R> function) {
+        try {
+            return Result.ok(function.apply());
+        } catch (Exception e) {
+            return Result.error(e);
+        }
     }
 
     public static <T, R> Result<R> tryCatch(ThrowingFunction<T, R> function, T arg1) {
