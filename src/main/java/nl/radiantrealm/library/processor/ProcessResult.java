@@ -1,8 +1,9 @@
 package nl.radiantrealm.library.processor;
 
+import com.sun.net.httpserver.HttpExchange;
 import nl.radiantrealm.library.http.enumerator.MediaType;
 import nl.radiantrealm.library.http.enumerator.StatusCode;
-import nl.radiantrealm.library.http.model.HttpExchange;
+import nl.radiantrealm.library.http.model.HttpTools;
 import nl.radiantrealm.library.utils.json.JsonConvertible;
 import nl.radiantrealm.library.utils.json.JsonObject;
 
@@ -27,10 +28,10 @@ public record ProcessResult(boolean success, int code, Optional<JsonObject> obje
     }
 
     public void sendHttpResponse(HttpExchange exchange) throws Exception {
-        exchange.sendResponse(
+        new HttpTools(exchange).sendResponse(
                 code,
                 MediaType.JSON.type,
-                toJson(false).getAsString()
+                toJson(false).toString()
         );
     }
 

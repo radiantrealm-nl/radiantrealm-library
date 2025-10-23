@@ -4,8 +4,6 @@ import nl.radiantrealm.library.utils.function.ThrowingBiFunction;
 import nl.radiantrealm.library.utils.function.ThrowingFunction;
 import nl.radiantrealm.library.utils.function.ThrowingNilFunction;
 
-import java.net.http.HttpResponse;
-
 public class HttpException extends RuntimeException {
     public final HttpResponse response;
 
@@ -15,7 +13,6 @@ public class HttpException extends RuntimeException {
 
     public HttpException(Exception e, HttpResponse response) {
         super(e);
-
         this.response = response;
     }
 
