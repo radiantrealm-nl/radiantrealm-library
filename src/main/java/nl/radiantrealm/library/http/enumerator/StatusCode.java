@@ -1,9 +1,9 @@
 package nl.radiantrealm.library.http.enumerator;
 
-import com.google.gson.JsonObject;
-import nl.radiantrealm.library.utils.dto.DataObject;
+import nl.radiantrealm.library.utils.json.JsonConvertible;
+import nl.radiantrealm.library.utils.json.JsonObject;
 
-public enum StatusCode implements DataObject {
+public enum StatusCode implements JsonConvertible {
     CONTINUE(100, null),
     SWITCHING_PROTOCOLS(101, null),
     PROCESSING(102, null),
@@ -53,7 +53,7 @@ public enum StatusCode implements DataObject {
 
     public JsonObject toJson(String key, String message) {
         JsonObject object = new JsonObject();
-        object.addProperty(key, message);
+        object.add(key, message);
         return object;
     }
 
@@ -68,7 +68,7 @@ public enum StatusCode implements DataObject {
     }
 
     @Override
-    public JsonObject toJson() throws IllegalStateException {
+    public JsonObject toJson() {
         return toJson(message);
     }
 }
