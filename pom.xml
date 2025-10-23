@@ -6,7 +6,7 @@
 
     <groupId>nl.radiantrealm.library</groupId>
     <artifactId>radiantrealm-library</artifactId>
-    <version>2.0.0</version>
+    <version>2.1.0</version>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -33,12 +33,6 @@
     </build>
 
     <dependencies>
-        <dependency>
-            <groupId>com.google.code.gson</groupId>
-            <artifactId>gson</artifactId>
-            <version>2.13.0</version>
-        </dependency>
-
         <dependency>
             <groupId>com.zaxxer</groupId>
             <artifactId>HikariCP</artifactId>
