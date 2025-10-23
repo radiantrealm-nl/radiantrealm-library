@@ -1,10 +1,9 @@
 package nl.radiantrealm.library.http.client;
 
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
-import com.google.gson.JsonObject;
 import nl.radiantrealm.library.http.enumerator.HttpMethod;
 import nl.radiantrealm.library.http.enumerator.MediaType;
 import nl.radiantrealm.library.utils.Logger;
+import nl.radiantrealm.library.utils.json.JsonObject;
 
 import java.net.URI;
 import java.net.http.HttpClient;
@@ -24,7 +23,6 @@ public abstract class AbstractHttpClient {
         return Duration.ofMinutes(1);
     }
 
-    @CanIgnoreReturnValue
     public HttpResponse<String> sendRequest(String url, String method, String mediaType, String body) throws Exception {
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -36,13 +34,11 @@ public abstract class AbstractHttpClient {
         return client.sendAsync(request, HttpResponse.BodyHandlers.ofString()).get();
     }
 
-    @CanIgnoreReturnValue
     public HttpResponse<String> sendRequest(String url, HttpMethod method, MediaType mediaType, String body) throws Exception {
         return sendRequest(url, method.name(), mediaType.type, body);
     }
 
-    @CanIgnoreReturnValue
     public HttpResponse<String> sendRequest(String url, HttpMethod method, JsonObject object) throws Exception {
-        return sendRequest(url, method.name(), MediaType.JSON.type, object.getAsString());
+        return sendRequest(url, method.name(), MediaType.JSON.type, object.toString());
     }
 }
