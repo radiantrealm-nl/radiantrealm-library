@@ -1,12 +1,11 @@
 package nl.radiantrealm.library.http.server;
 
+import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
-import nl.radiantrealm.library.http.enumerator.StatusCode;
 import nl.radiantrealm.library.http.model.HttpException;
-import nl.radiantrealm.library.http.handler.HttpHandler;
-import nl.radiantrealm.library.http.model.HttpRequest;
 import nl.radiantrealm.library.utils.Logger;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 
 public abstract class AbstractHttpServer {
@@ -36,39 +35,32 @@ public abstract class AbstractHttpServer {
 
     protected void register(HttpHandler handler, boolean keepAlive, String path) {
         if (server == null) {
-            logger.error(String.format("Cannot register handler at path '%s' on port '%s'. HTTP server is not initialized.", path, port));
-            return;
+            throw new IllegalStateException(String.format("Cannot register HTTP handler at path '%s' on port '%s'. HTTP server is not initialized.", path, port));
         }
 
         server.createContext(path, exchange -> {
             try {
-                HttpRequest request = new HttpRequest(exchange);
-
                 try {
-                    handler.handle(request);
+                    handler.handle(exchange);
                 } catch (HttpException e) {
-                    request.sendResponse(e.response);
-                } catch (Exception e) {
-                    logger.error(String.format("Unexpected error while handling request at path '%s' on port '%s'.", path, port), e);
-                    request.sendStatusResponse(StatusCode.SERVER_ERROR);
+                    //Send response e
+                } catch (IOException e) {
+                    logger.error(String.format("Unexpected error while handling request at path '%s' on port '%s'.", path, port));
+                    //send response server error
                 } finally {
                     if (!keepAlive) {
-                        request.close();
+                        exchange.close();
                     }
                 }
             } catch (Exception e) {
-                logger.error(String.format("Failed to send response at path '%s' on port '%s'.", path, port), e);
+                logger.error(String.format("Failed to send response at path '%s' on port '%s'.", path, port));
             }
         });
     }
 
-    protected void register(HttpHandler handler, String path) {
-        register(handler, false, path);
-    }
-
-    protected void register(HttpHandler handler, String... paths) {
+    protected void register(HttpHandler handler, boolean keepAlive, String... paths) {
         for (String string : paths) {
-            register(handler, false, string);
+            register(handler, keepAlive, string);
         }
     }
 }
