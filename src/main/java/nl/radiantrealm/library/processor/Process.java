@@ -1,6 +1,6 @@
 package nl.radiantrealm.library.processor;
 
-import com.google.gson.JsonObject;
+import nl.radiantrealm.library.utils.json.JsonObject;
 
 import java.util.function.Consumer;
 

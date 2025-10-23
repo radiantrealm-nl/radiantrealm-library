@@ -1,7 +1,5 @@
 package nl.radiantrealm.library.cache;
 
-import com.google.errorprone.annotations.CanIgnoreReturnValue;
-
 import java.time.Duration;
 import java.util.*;
 import java.util.concurrent.*;
@@ -99,13 +97,11 @@ public abstract class CacheRegistry<K, V> {
         }
     }
 
-    @CanIgnoreReturnValue
     public V remove(K key) {
         expiry.remove(key);
         return data.remove(key);
     }
 
-    @CanIgnoreReturnValue
     public Collection<V> remove(Collection<K> keys) {
         Collection<V> collection = new HashSet<>(keys.size());
 
