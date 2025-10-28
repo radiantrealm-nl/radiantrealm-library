@@ -1,9 +1,6 @@
 package nl.radiantrealm.library.utils.json;
 
 import java.math.BigDecimal;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
 import java.util.UUID;
 
 public abstract class JsonElement {
@@ -12,54 +9,15 @@ public abstract class JsonElement {
 
     @Override
     public String toString() {
-        return toString(new StringBuilder(), false);
+        return JsonPrinter.print(this);
     }
 
     public String toString(boolean prettyPrinting) {
-        return toString(new StringBuilder(), prettyPrinting);
+        return JsonPrinter.print(this, prettyPrinting);
     }
 
-    protected String toString(StringBuilder builder, boolean prettyPrint) {
-        return switch (this) {
-            case JsonArray array -> {
-                builder.append(prettyPrint ? "[\n" : '[');
-                Set<String> strings = new HashSet<>(array.size());
-
-                for (JsonElement element : array) {
-                    strings.add(String.format(element.toString(new StringBuilder(), prettyPrint)));
-                }
-
-                builder.append(String.join(prettyPrint ? ",\n" : ",", strings));
-                yield builder.append(prettyPrint ? "\n]" : ']').toString();
-            }
-
-            case JsonObject object -> {
-                builder.append(prettyPrint ? "{\n" : '{');
-                Set<String> strings = new HashSet<>(object.size());
-
-                for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
-                    strings.add(String.format(
-                            "\"%s\"%s%s",
-                            entry.getKey(),
-                            prettyPrint ? ": " : ':',
-                            entry.getValue().toString(new StringBuilder(), prettyPrint))
-                    );
-                }
-
-                builder.append(String.join(prettyPrint ? ",\n" : ",", strings));
-                yield builder.append('}').toString();
-            }
-
-            case JsonPrimitive primitive -> switch (primitive.object) {
-                case Boolean bool -> builder.append(bool).toString();
-                case Number number -> builder.append(number).toString();
-                case String string -> builder.append(String.format("\"%s\"", string)).toString();
-                default -> throw new IllegalArgumentException("Unknown Json primitive type.");
-            };
-
-            case JsonNull jsonNull -> builder.append(jsonNull).toString();
-            default -> throw new IllegalStateException();
-        };
+    public String toString(JsonPrintingContext context) {
+        return JsonPrinter.print(this, context);
     }
 
     public JsonArray getAsJsonArray() {
