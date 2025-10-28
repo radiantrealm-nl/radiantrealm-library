@@ -34,7 +34,7 @@ public abstract class CacheRegistry<K, V> {
 
     protected abstract V load(K key) throws Exception;
 
-    protected Map<K, V> load(Collection<K> keys) throws Exception {
+    protected Map<K, V> load(List<K> keys) throws Exception {
         Map<K, V> map = new HashMap<>(keys.size());
 
         for (K key : keys) {
@@ -54,17 +54,17 @@ public abstract class CacheRegistry<K, V> {
         return value;
     }
 
-    public Map<K, V> get(Collection<K> keys) throws Exception {
+    public Map<K, V> get(List<K> keys) throws Exception {
         if (keys.isEmpty()) return null;
 
         if (keys.size() == 1) {
-            K key = keys.iterator().next();
+            K key = keys.getFirst();
             V value = get(key);
             return Map.of(key, value);
         }
 
         Map<K, V> cachedKeys = new HashMap<>(keys.size());
-        Collection<K> loadKeys = new HashSet<>();
+        List<K> loadKeys = new ArrayList<>();
 
         for (K key : keys) {
             V value = data.get(key);
@@ -102,14 +102,14 @@ public abstract class CacheRegistry<K, V> {
         return data.remove(key);
     }
 
-    public Collection<V> remove(Collection<K> keys) {
-        Collection<V> collection = new HashSet<>(keys.size());
+    public List<V> remove(List<K> keys) {
+        List<V> list = new ArrayList<>(keys.size());
 
         for (K key : keys) {
-            collection.add(remove(key));
+            list.add(remove(key));
         }
 
-        return collection;
+        return list;
     }
 
     public void clear() {
