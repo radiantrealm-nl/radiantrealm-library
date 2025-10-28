@@ -56,7 +56,7 @@ public class JsonParser {
                     switch (c = advance(true)) {
                         case '{' -> object.add(key, getJsonObject(new JsonObject()));
                         case '[' -> object.add(key, getJsonArray(new JsonArray()));
-                        case '"' -> object.add(key, getJsonString(new StringBuilder(String.valueOf(c))));
+                        case '"' -> object.add(key, getJsonString(new StringBuilder()));
                         case 't', 'f' -> object.add(key, getJsonBoolean(c == 't'));
                         case 'n' -> object.add(key, getJsonNull());
                         case '-', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0' -> object.add(key, getJsonNumber(c));
