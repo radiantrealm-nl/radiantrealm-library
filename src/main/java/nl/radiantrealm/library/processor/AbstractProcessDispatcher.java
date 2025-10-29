@@ -15,7 +15,7 @@ public abstract class AbstractProcessDispatcher {
     protected final Logger logger = Logger.getLogger(this.getClass());
 
     protected static final AtomicInteger processID = new AtomicInteger(0);
-    protected static final Map<Integer, Process> processMap = new ConcurrentHashMap<>();
+    protected static final ConcurrentHashMap<Integer, Process> processMap = new ConcurrentHashMap<>();
     protected final ScheduledExecutorService executorService;
     protected ScheduledFuture<?> task;
 
