@@ -4,39 +4,45 @@ import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import java.sql.Connection;
+import java.sql.SQLException;
 
-public abstract class HikariDatabase {
-    protected static HikariDataSource dataSource;
+public abstract class HikariDatabase extends AbstractDatabase {
+    protected HikariDataSource dataSource;
 
-    protected abstract String databaseURL();
-    protected abstract String databaseUsername();
-    protected abstract String databasePassword();
-
-    public HikariDatabase() {
-        HikariDatabase.dataSource = buildDataSource();
-    }
-
-    protected HikariDataSource buildDataSource() {
+    protected HikariDataSource buildHikariDataSource() {
         HikariConfig config = new HikariConfig();
         config.setJdbcUrl(databaseURL());
         config.setUsername(databaseUsername());
         config.setPassword(databasePassword());
-        config.setMaximumPoolSize(10);
-        config.setIdleTimeout(30000);
         return new HikariDataSource(config);
     }
 
-    public static Connection getConnection(boolean autoCommit) throws Exception {
-        if (dataSource == null) {
-            throw new Exception("Database offline.");
+    @Override
+    public void connect() {
+        if (dataSource == null || dataSource.isClosed()) {
+            dataSource = buildHikariDataSource();
+        }
+    }
+
+    @Override
+    public void disconnect() {
+        if (dataSource != null && !dataSource.isClosed()) {
+            dataSource.close();
+        }
+    }
+
+    @Override
+    public Connection getConnection() throws SQLException {
+        return getConnection(true);
+    }
+
+    public Connection getConnection(boolean autoCommit) throws SQLException {
+        if (dataSource == null || dataSource.isClosed()) {
+            connect();
         }
 
         Connection connection = dataSource.getConnection();
         connection.setAutoCommit(autoCommit);
         return connection;
-    }
-
-    public static Connection getConnection() throws Exception {
-        return getConnection(false);
     }
 }

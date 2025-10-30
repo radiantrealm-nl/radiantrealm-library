@@ -2,10 +2,8 @@ package nl.radiantrealm.library.utils.json;
 
 import org.jetbrains.annotations.NotNull;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
+import java.util.function.Function;
 
 public class JsonArray extends JsonElement implements Iterable<JsonElement> {
     private final ArrayList<JsonElement> list;
@@ -31,6 +29,49 @@ public class JsonArray extends JsonElement implements Iterable<JsonElement> {
         }
 
         return array;
+    }
+
+    @Override
+    public @NotNull Iterator<JsonElement> iterator() {
+        return list.iterator();
+    }
+
+    public static <E> JsonArray fromList(Collection<E> collection, Function<E, JsonElement> function) {
+        JsonArray array = new JsonArray(collection.size());
+
+        for (E e : collection) {
+            array.add(function.apply(e));
+        }
+
+        return array;
+    }
+
+    public List<JsonElement> asList() {
+        return list;
+    }
+
+    public int size() {
+        return list.size();
+    }
+
+    public boolean contains(JsonElement element) {
+        return list.contains(element);
+    }
+
+    public boolean isEmpty() {
+        return list.isEmpty();
+    }
+
+    public JsonElement get(int index) {
+        return list.get(index);
+    }
+
+    public JsonElement getFirst() {
+        return list.getFirst();
+    }
+
+    public JsonElement getLast() {
+        return list.getLast();
     }
 
     public void add(JsonElement element) {
@@ -65,24 +106,7 @@ public class JsonArray extends JsonElement implements Iterable<JsonElement> {
         list.remove(element);
     }
 
-    public boolean contains(JsonElement element) {
-        return list.contains(element);
-    }
-
-    public int size() {
-        return list.size();
-    }
-
-    public boolean isEmpty() {
-        return list.isEmpty();
-    }
-
-    @Override
-    public @NotNull Iterator<JsonElement> iterator() {
-        return list.iterator();
-    }
-
-    public List<JsonElement> asList() {
-        return list;
+    public void clear() {
+        list.clear();
     }
 }

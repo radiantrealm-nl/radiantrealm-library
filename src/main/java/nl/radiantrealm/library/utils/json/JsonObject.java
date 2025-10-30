@@ -2,6 +2,7 @@ package nl.radiantrealm.library.utils.json;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.function.Function;
 
 public class JsonObject extends JsonElement {
     private final LinkedHashMap<String, JsonElement> map;
@@ -27,6 +28,35 @@ public class JsonObject extends JsonElement {
         }
 
         return object;
+    }
+
+    public static <K, V> JsonObject fromMap(Map<K, V> map, Function<K, String> keyFunction, Function<V, JsonElement> valueFunction) {
+        JsonObject object = new JsonObject(map.size());
+
+        for (Map.Entry<K, V> entry : map.entrySet()) {
+            object.add(
+                    keyFunction.apply(entry.getKey()),
+                    valueFunction.apply(entry.getValue())
+            );
+        }
+
+        return object;
+    }
+
+    public Set<Map.Entry<String, JsonElement>> entrySet() {
+        return map.entrySet();
+    }
+
+    public Set<String> keySet() {
+        return map.keySet();
+    }
+
+    public Collection<JsonElement> values() {
+        return map.values();
+    }
+
+    public LinkedHashMap<String, JsonElement> asMap() {
+        return map;
     }
 
     public JsonElement get(String key) {
@@ -97,6 +127,20 @@ public class JsonObject extends JsonElement {
         add(key, enumerator.name());
     }
 
+    public void addAll(JsonObject object) {
+        for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
+            add(entry.getKey(), entry.getValue());
+        }
+    }
+
+    public void remove(String key) {
+        map.remove(key);
+    }
+
+    public boolean has(String key) {
+        return map.containsKey(key);
+    }
+
     public int size() {
         return map.size();
     }
@@ -107,25 +151,5 @@ public class JsonObject extends JsonElement {
 
     public void clear() {
         map.clear();
-    }
-
-    public Set<Map.Entry<String, JsonElement>> entrySet() {
-        return map.entrySet();
-    }
-
-    public Set<String> keySet() {
-        return map.keySet();
-    }
-
-    public Collection<JsonElement> values() {
-        return map.values();
-    }
-
-    public boolean has(String key) {
-        return map.containsKey(key);
-    }
-
-    public LinkedHashMap<String, JsonElement> asMap() {
-        return map;
     }
 }

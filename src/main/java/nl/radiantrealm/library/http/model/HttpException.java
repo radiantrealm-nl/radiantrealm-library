@@ -16,7 +16,7 @@ public class HttpException extends RuntimeException {
         this.response = response;
     }
 
-    public static <R> R tryFunction(ThrowingNilFunction<R> function, HttpResponse response) throws Exception {
+    public static <R> R tryFunction(ThrowingNilFunction<R> function, HttpResponse response) {
         try {
             return function.apply();
         } catch (Exception e) {
@@ -24,7 +24,7 @@ public class HttpException extends RuntimeException {
         }
     }
 
-    public static <T, R> R tryFunction(ThrowingFunction<T, R> function, T arg1, HttpResponse response) throws Exception {
+    public static <T, R> R tryFunction(ThrowingFunction<T, R> function, T arg1, HttpResponse response) {
         try {
             return function.apply(arg1);
         } catch (Exception e) {
@@ -32,7 +32,7 @@ public class HttpException extends RuntimeException {
         }
     }
 
-    public static <T, U, R> R tryFunction(ThrowingBiFunction<T, U, R> function, T arg1, U arg2, HttpResponse response) throws Exception {
+    public static <T, U, R> R tryFunction(ThrowingBiFunction<T, U, R> function, T arg1, U arg2, HttpResponse response) {
         try {
             return function.apply(arg1, arg2);
         } catch (Exception e) {
