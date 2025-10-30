@@ -5,25 +5,29 @@ import org.jetbrains.annotations.NotNull;
 import java.util.*;
 import java.util.concurrent.*;
 
-public abstract class AbstractCache<K, V> {
-    protected final ScheduledExecutorService executorService;
+public abstract class AbstractCache<K, V> implements AutoCloseable {
+    protected final ScheduledExecutorService executorService = Executors.newSingleThreadScheduledExecutor();
     protected final ConcurrentHashMap<K, CacheEntry<V>> data = new ConcurrentHashMap<>();
     protected final ConcurrentLinkedQueue<K> linkedQueue = new ConcurrentLinkedQueue<>();
     protected final CachingStrategy strategy;
-    protected final long evictionDuration;
-    protected final long evictionInterval;
 
     public AbstractCache(@NotNull CachingStrategy strategy) {
         this.strategy = Objects.requireNonNull(strategy);
-        this.evictionDuration = Objects.requireNonNull(strategy.evictionDuration()).toMillis();
-        this.evictionInterval = Objects.requireNonNull(strategy.evictionInterval()).toMillis();
-        this.executorService = Executors.newSingleThreadScheduledExecutor();
         this.executorService.scheduleAtFixedRate(
                 this::evictEntries,
-                evictionInterval,
-                evictionInterval,
+                strategy.evictionInterval(),
+                strategy.evictionInterval(),
                 TimeUnit.MILLISECONDS
         );
+    }
+
+    @Override
+    public void close() throws Exception {
+        executorService.shutdown();
+
+        if (!executorService.awaitTermination(30, TimeUnit.SECONDS)) {
+            executorService.shutdownNow();
+        }
     }
 
     protected record CacheEntry<V>(V value, long evictionTime) {}
@@ -31,9 +35,21 @@ public abstract class AbstractCache<K, V> {
     protected void evictEntries() {
         long timestamp = System.currentTimeMillis();
 
-        for (Map.Entry<K, CacheEntry<V>> entry : data.entrySet()) {
-            if (timestamp > entry.getValue().evictionTime) {
-                remove(entry.getKey(), entry.getValue().value());
+        data.forEach((key, value) -> {
+            if (timestamp > value.evictionTime) {
+                remove(key, value.value);
+            }
+        });
+    }
+
+    protected void evictIfFull() {
+        while (data.size() > strategy.maxCacheEntries()) {
+            K oldestKey = linkedQueue.poll();
+
+            if (oldestKey != null) {
+                data.remove(oldestKey);
+            } else {
+                break;
             }
         }
     }
@@ -71,7 +87,9 @@ public abstract class AbstractCache<K, V> {
     }
 
     public Map<K, V> get(@NotNull List<K> keys) throws Exception {
-        if (Objects.requireNonNull(keys).isEmpty()) return null;
+        if (Objects.requireNonNull(keys).isEmpty()) {
+            return Map.of();
+        }
 
         Map<K, V> cached = new HashMap<>(keys.size());
 
@@ -95,7 +113,7 @@ public abstract class AbstractCache<K, V> {
 
         Map<K, V> loaded = load(fetch);
         put(loaded);
-        cached.putAll(load(fetch));
+        cached.putAll(loaded);
         return cached;
     }
 
@@ -103,16 +121,10 @@ public abstract class AbstractCache<K, V> {
         linkedQueue.add(key);
         data.put(key, new CacheEntry<>(
                 Objects.requireNonNull(value),
-                System.currentTimeMillis() + evictionDuration
+                System.currentTimeMillis() + strategy.evictionDuration()
         ));
 
-        if (data.size() > strategy.maxCacheEntries()) {
-            K oldestKey = linkedQueue.poll();
-
-            if (oldestKey != null) {
-                data.remove(oldestKey);
-            }
-        }
+        evictIfFull();
     }
 
     public void put(@NotNull Map<K, V> map) {
@@ -120,19 +132,11 @@ public abstract class AbstractCache<K, V> {
             linkedQueue.add(entry.getKey());
             data.put(entry.getKey(), new CacheEntry<>(
                     Objects.requireNonNull(entry.getValue()),
-                    System.currentTimeMillis() + evictionDuration
+                    System.currentTimeMillis() + strategy.evictionDuration()
             ));
         }
 
-        while (data.size() > strategy.maxCacheEntries()) {
-            K oldestKey = linkedQueue.poll();
-
-            if (oldestKey != null) {
-                data.remove(oldestKey);
-            } else {
-                break;
-            }
-        }
+        evictIfFull();
     }
 
     public void remove(@NotNull K key) {

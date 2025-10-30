@@ -6,19 +6,20 @@ import nl.radiantrealm.library.http.enumerator.MediaType;
 import nl.radiantrealm.library.http.enumerator.StatusCode;
 import nl.radiantrealm.library.http.model.HttpException;
 import nl.radiantrealm.library.http.model.HttpTools;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
 public abstract class AbstractHTTPCache<K, V> extends AbstractCache<K, V> implements HttpHandler {
     private final String mediaType;
 
-    public AbstractHTTPCache(CachingStrategy strategy, String mediaType) {
+    public AbstractHTTPCache(@NotNull CachingStrategy strategy, String mediaType) {
         super(strategy);
 
         this.mediaType = mediaType;
     }
 
-    public AbstractHTTPCache(CachingStrategy strategy, MediaType mediaType) {
+    public AbstractHTTPCache(@NotNull CachingStrategy strategy, MediaType mediaType) {
         this(
                 strategy,
                 mediaType.type
