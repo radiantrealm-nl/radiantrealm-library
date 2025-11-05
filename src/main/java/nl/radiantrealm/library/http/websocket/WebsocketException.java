@@ -1,14 +1,14 @@
 package nl.radiantrealm.library.http.websocket;
 
 public class WebsocketException extends RuntimeException {
-    public final WebsocketStatusCode statusCode;
+    public final WebsocketExitCode exitCode;
 
-    public WebsocketException(WebsocketStatusCode statusCode) {
-        this.statusCode = statusCode;
+    public WebsocketException(WebsocketExitCode exitCode) {
+        this.exitCode = exitCode;
     }
 
-    public WebsocketException(Exception e, WebsocketStatusCode statusCode) {
+    public WebsocketException(Exception e, WebsocketExitCode exitCode) {
         super(e);
-        this.statusCode = statusCode;
+        this.exitCode = exitCode;
     }
 }
