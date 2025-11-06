@@ -16,12 +16,12 @@ public class WebsocketHandshake {
 
     private WebsocketHandshake() {}
 
-    public static boolean perform(SocketChannel channel) throws IOException {
+    public static String perform(SocketChannel channel) throws IOException {
         ByteBuffer buffer = ByteBuffer.allocate(1024);
         int bytesRead = channel.read(buffer);
 
         if (bytesRead <= 0) {
-            return false;
+            return null;
         }
 
         buffer.flip();
@@ -29,9 +29,25 @@ public class WebsocketHandshake {
         buffer.get(requestBytes);
         String httpRequest = new String(requestBytes, StandardCharsets.UTF_8);
 
+        String[] lines = httpRequest.split("\r\n");
+        String requestPath = null;
+
+        if (lines.length > 0) {
+            String requestLine = lines[0];
+            String[] parts = requestLine.split(" ");
+
+            if (parts.length >= 2 && parts[0].equalsIgnoreCase("GET")) {
+                requestPath = parts[1];
+            }
+        }
+
+        if (requestPath == null) {
+            return null;
+        }
+
         Matcher matcher = WEBSOCKET_KEY_PATTERN.matcher(httpRequest);
         if (!matcher.find()) {
-            return false;
+            return null;
         }
 
         String secWebSocketKey = matcher.group(1).trim();
@@ -50,7 +66,7 @@ public class WebsocketHandshake {
 
         ByteBuffer responseBuffer = ByteBuffer.wrap(httpResponse.getBytes(StandardCharsets.UTF_8));
         channel.write(responseBuffer);
-        return true;
+        return requestPath;
     }
 
     private static String generateAcceptKey(String clientKey) throws NoSuchAlgorithmException {
