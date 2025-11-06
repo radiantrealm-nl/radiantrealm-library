@@ -1,18 +1,23 @@
 package nl.radiantrealm.library.http.websocket;
 
-import java.io.ByteArrayOutputStream;
+import nl.radiantrealm.library.utils.Logger;
+
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.nio.channels.*;
-import java.nio.charset.StandardCharsets;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public abstract class WebsocketServer implements AutoCloseable {
-    protected final ExecutorService executorService = Executors.newFixedThreadPool(10);
-    protected final Map<String, Set<WebsocketEndpoint>> listeners = new HashMap<>();
+    protected final Logger logger = Logger.getLogger(this.getClass());
+
+    protected final ExecutorService executorService;
+    protected final Map<String, WebsocketEndpoint> endpointMap = new HashMap<>();
 
     protected final Selector selector;
     protected final WebsocketConfiguration configuration;
@@ -20,6 +25,7 @@ public abstract class WebsocketServer implements AutoCloseable {
     protected final AtomicBoolean isRunning = new AtomicBoolean(true);
 
     public WebsocketServer(WebsocketConfiguration configuration) throws IOException {
+        this.executorService = Executors.newFixedThreadPool(configuration.workingIOThreads());
         this.selector = Selector.open();
         this.configuration = configuration;
         this.serverChannel = buildServerChannel();
@@ -27,11 +33,23 @@ public abstract class WebsocketServer implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() throws IOException {
         isRunning.set(false);
         selector.wakeup();
         selector.close();
         serverChannel.close();
+    }
+
+    protected void registerEndpoint(String path, WebsocketEndpoint endpoint) {
+        endpointMap.put(path, endpoint);
+    }
+
+    protected ServerSocketChannel buildServerChannel() throws IOException {
+        ServerSocketChannel channel = ServerSocketChannel.open();
+        channel.configureBlocking(false);
+        channel.bind(configuration.socketAddress());
+        channel.register(selector, SelectionKey.OP_ACCEPT);
+        return channel;
     }
 
     protected void IOLoop() {
@@ -43,91 +61,90 @@ public abstract class WebsocketServer implements AutoCloseable {
                 }
 
                 Iterator<SelectionKey> iterator = selector.selectedKeys().iterator();
-
                 while (iterator.hasNext()) {
                     SelectionKey key = iterator.next();
+                    iterator.remove();
+
+                    if (!key.isValid()) {
+                        continue;
+                    }
 
                     if (key.isAcceptable()) {
                         acceptClientChannel();
                     }
 
                     if (key.isReadable() && key.attachment() instanceof WebsocketSession session) {
-                        handleRead(session);
+                        readInputBytes(session);
                     }
-
-                    iterator.remove();
                 }
             } catch (IOException e) {
-                e.printStackTrace();
+                logger.error("Unexpected error during main IO Loop.", e);
             }
         }
     }
 
-    protected ServerSocketChannel buildServerChannel() throws IOException {
-        System.out.println("building server channel");
-        ServerSocketChannel channel = ServerSocketChannel.open();
-        channel.configureBlocking(false);
-        channel.bind(configuration.address());
-        channel.register(selector, SelectionKey.OP_ACCEPT);
-        return channel;
-    }
-
     protected void acceptClientChannel() throws IOException {
-        System.out.println("accepting client channel");
         SocketChannel channel = serverChannel.accept();
 
         if (channel != null) {
             channel.configureBlocking(false);
             executorService.submit(() -> {
                 try {
-                    if (WebsocketHandshake.perform(channel)) {
-                        WebsocketSession session = buildWebsocketSession(channel);
-                        channel.register(selector, SelectionKey.OP_READ, session);
-                    } else {
+                    String path = WebsocketHandshake.perform(channel);
+                    WebsocketEndpoint endpoint = endpointMap.get(path);
+
+                    if (endpoint == null) {
                         channel.close();
+                    } else {
+                        WebsocketSession session = buildWebsocketSession(channel, path);
+                        channel.register(selector, SelectionKey.OP_READ, session);
+                        endpoint.onOpen(session);
                     }
-                } catch (IOException e) {
-                    e.printStackTrace();
+                } catch (Exception e) {
+                    logger.error("Failed to accept client channel.", e);
                 }
             });
         }
     }
 
-    protected WebsocketSession buildWebsocketSession(SocketChannel channel) {
+    protected WebsocketSession buildWebsocketSession(SocketChannel channel, String path) {
         return new WebsocketSession(
                 configuration,
+                selector,
+                path,
                 UUID.randomUUID().toString(),
                 channel
         );
     }
 
-    protected void handleRead(WebsocketSession session) throws IOException {
+    protected void readInputBytes(WebsocketSession session) throws IOException {
         SocketChannel channel = session.channel;
         ByteBuffer buffer = ByteBuffer.allocate(configuration.incomingBufferSize());
+
         int bytesRead = channel.read(buffer);
-
         if (bytesRead < 0) {
-            closeSocket(session, WebsocketExitCode.NO_DATA_RECEIVED);
+            session.close();
             return;
-        }
-
-        if (bytesRead > 0) {
-            buffer.flip();
+        } else if (bytesRead > 0) {
             byte[] data = new byte[bytesRead];
-            buffer.get(data);
+            buffer.flip().get(data);
             session.appendInputBytes(data);
         }
 
         executorService.submit(() -> {
-            boolean sufficientBytes;
+            try {
+                boolean sufficientBytes;
 
-            do {
-                sufficientBytes = processFrames(session);
-            } while (sufficientBytes);
+                do {
+                    sufficientBytes = awaitInputBytes(session);
+                } while (sufficientBytes);
+            } catch (IOException e) {
+                logger.error("An error occured while waiting for input bytes.", e);
+            }
         });
     }
 
-    protected boolean processFrames(WebsocketSession session) {
+    protected boolean awaitInputBytes(WebsocketSession session) throws IOException {
         try {
             byte[] bytes = session.getInputBytes();
 
@@ -135,15 +152,19 @@ public abstract class WebsocketServer implements AutoCloseable {
                 return false;
             }
 
-            boolean isMasked = (bytes[1] & 0x80) != 0;
-            int initialPayloadLength = bytes[1] & 0x7F;
+            boolean finalMessage = (bytes[0] & 0x80) != 0;
+            if (!configuration.allowFragmentation() && !finalMessage) {
+                throw new WebsocketException(WebsocketExitCode.PROTOCOL_ERROR);
+            }
 
+            int initialPayloadLength = bytes[1] & 0x7F;
             int headerOffset = 2;
             long payloadLength;
 
             if (initialPayloadLength == 126) {
                 if (bytes.length < 4) return false;
-                payloadLength = ((bytes[2] & 0xFF) << 8) | (bytes[3] & 0xFF);
+                ByteBuffer buffer = ByteBuffer.wrap(bytes, 2, 2);
+                payloadLength = Short.toUnsignedInt(buffer.getShort());
                 headerOffset += 2;
             } else if (initialPayloadLength == 127) {
                 if (bytes.length < 10) return false;
@@ -154,102 +175,56 @@ public abstract class WebsocketServer implements AutoCloseable {
                 payloadLength = initialPayloadLength;
             }
 
-            if (payloadLength > Integer.MAX_VALUE || payloadLength > configuration.maxPayloadLength()) {
-                closeSocket(session, WebsocketExitCode.TOO_MUCH_DATA);
-                return true;
+            if (payloadLength > Integer.MAX_VALUE) {
+                throw new WebsocketException(WebsocketExitCode.MESSAGE_TOO_BIG);
             }
 
-            int maskOffset = isMasked ? 4 : 0;
-            int frameSize = headerOffset + maskOffset + (int) payloadLength;
-            if (bytes.length < frameSize) {
+            boolean isMasked = (bytes[1] & 0x80) != 0;
+            long frameLength = headerOffset + (isMasked ? 4 : 0) + payloadLength;
+            if (frameLength > Integer.MAX_VALUE) {
+                throw new WebsocketException(WebsocketExitCode.MESSAGE_TOO_BIG);
+            }
+
+            if (bytes.length < frameLength) {
                 return false;
             }
 
-            int headerSize = headerOffset  + maskOffset;
+            WebsocketOperatorCode operatorCode = WebsocketOperatorCode.getWsopCode(bytes[0] & 0x0F);
+            if (operatorCode == null) {
+                throw new WebsocketException(WebsocketExitCode.PROTOCOL_ERROR);
+            }
+
             byte[] payload = new byte[(int) payloadLength];
-            System.arraycopy(bytes, headerSize, payload, 0, (int) payloadLength);
+            System.arraycopy(bytes, headerOffset + (isMasked ? 4 : 0), payload, 0, (int) payloadLength);
+            session.consumeInputBytes((int) frameLength);
 
             if (isMasked) {
                 byte[] maskKey = new byte[4];
                 System.arraycopy(bytes, headerOffset, maskKey, 0, 4);
+
                 for (int i = 0; i < payload.length; i++) {
                     payload[i] ^= maskKey[i % 4];
                 }
             }
 
-            session.consumeInputBytes(frameSize);
-            dispatchFrame(session, new WebsocketFrame(
-                    WebsocketOperatorCode.getWsopCode(bytes[0] & 0x0F),
-                    (bytes[0] & 0x80) != 0,
-                    payload
-            ));
+            WebsocketEndpoint endpoint = endpointMap.get(session.path);
+
+            if (endpoint != null) {
+                endpoint.onFrame(session, new WebsocketFrame(
+                        operatorCode,
+                        finalMessage,
+                        payload
+                ));
+            }
+            return true;
+        } catch (WebsocketException e) {
+            session.sendFrame(e.exitCode.generateFrame());
+            session.close();
+            return false;
         } catch (IOException e) {
-            e.printStackTrace();
+            session.sendFrame(WebsocketExitCode.PROTOCOL_ERROR.generateFrame());
+            session.close();
             return false;
         }
-
-        return true;
-    }
-
-    protected void dispatchFrame(WebsocketSession session, WebsocketFrame frame) throws IOException {
-        if (frame.operatorCode().equals(WebsocketOperatorCode.CONTINUE)) {
-            session.addFragmentedFrame(frame);
-
-            if (frame.finalMessage()) {
-                List<WebsocketFrame> list = session.consumeFragmentedFrames();
-                long payloadLength = 0;
-
-                for (WebsocketFrame websocketFrame : list) {
-                    payloadLength += websocketFrame.payload().length;
-                }
-
-                if (payloadLength > Integer.MAX_VALUE || payloadLength > configuration.maxPayloadLength()) {
-                    closeSocket(session, WebsocketExitCode.TOO_MUCH_DATA);
-                    return;
-                }
-
-                ByteArrayOutputStream outputStream = new ByteArrayOutputStream((int) payloadLength);
-                for (WebsocketFrame websocketFrame : list) {
-                    outputStream.write(websocketFrame.payload());
-                }
-
-//                for (WebsocketEndpoint endpoint : listeners.get(session.sessionID)) {
-//                    endpoint.onFrame(session, new WebsocketFrame(
-//                            list.getFirst().operatorCode(),
-//                            true,
-//                            outputStream.toByteArray()
-//                    ));
-//                }
-            }
-        } else if (frame.finalMessage()) {
-//            for (WebsocketEndpoint endpoint : listeners.get(session.sessionID)) {
-//                endpoint.onFrame(session, frame);
-//            }
-            System.out.println("Received: " + new String(frame.payload(), StandardCharsets.UTF_8));
-            sendFrame(session, new WebsocketFrame(
-                    WebsocketOperatorCode.UTF_8,
-                    true,
-                    frame.payload()
-            ));
-        } else {
-            session.addFragmentedFrame(frame);
-        }
-    }
-
-    protected void sendFrame(WebsocketSession session, WebsocketFrame frame) throws IOException {
-        ByteBuffer buffer = ByteBuffer.wrap(frame.toBytes());
-        session.channel.write(buffer);
-    }
-
-    protected void closeSocket(WebsocketSession session, WebsocketExitCode exitCode) throws IOException {
-        sendFrame(session, new WebsocketFrame(
-                WebsocketOperatorCode.CLOSE,
-                true,
-                new byte[] {
-                        (byte) (exitCode.code & 0xFF << 8),
-                        (byte) (exitCode.code & 0xFF)
-                }
-        ));
-        session.channel.close();
     }
 }
