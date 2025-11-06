@@ -1,8 +1,12 @@
 package nl.radiantrealm.library.http.websocket;
 
-public abstract class WebsocketEndpoint {
+import java.io.IOException;
 
-    public abstract void onFrame(WebsocketSession session, WebsocketFrame frame);
+public interface WebsocketEndpoint {
 
-    public abstract void sendFrame(WebsocketSession session, WebsocketFrame frame);
+    default void onOpen(WebsocketSession session) throws IOException {}
+
+    default void onClose(WebsocketSession session) throws IOException {}
+
+    default void onFrame(WebsocketSession session, WebsocketFrame frame) throws IOException {}
 }
