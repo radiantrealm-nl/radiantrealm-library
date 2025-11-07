@@ -1,5 +1,6 @@
 package nl.radiantrealm.library.http.websocket;
 
+import nl.radiantrealm.library.http.model.HttpRequestContext;
 import nl.radiantrealm.library.utils.Logger;
 
 import java.io.IOException;
@@ -8,6 +9,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -90,22 +92,38 @@ public abstract class WebsocketServer implements AutoCloseable {
             channel.configureBlocking(false);
             executorService.submit(() -> {
                 try {
-                    String path = WebsocketHandshake.perform(channel);
+                    ByteBuffer buffer = ByteBuffer.allocate(configuration.incomingBufferSize());
+                    int bytesRead = channel.read(buffer);
+
+                    if (bytesRead <= 0) {
+                        return;
+                    }
+
+                    byte[] bytes = buffer.flip().array();
+                    HttpRequestContext context = HttpRequestContext.parse(new String(bytes, StandardCharsets.UTF_8));
+
+                    String path = context.requestURI().getPath();
                     WebsocketEndpoint endpoint = endpointMap.get(path);
 
                     if (endpoint == null) {
                         channel.close();
-                    } else {
-                        WebsocketSession session = buildWebsocketSession(channel, path);
-                        channel.register(selector, SelectionKey.OP_READ, session);
-                        endpoint.onOpen(session);
+                        return;
                     }
+
+                    WebsocketHandshake.perform(channel, context);
+                    WebsocketSession session = buildWebsocketSession(channel, path);
+                    channel.register(selector, SelectionKey.OP_READ, session);
+
+                    onAccept(session, context);
+                    endpoint.onOpen(session);
                 } catch (Exception e) {
                     logger.error("Failed to accept client channel.", e);
                 }
             });
         }
     }
+
+    protected void onAccept(WebsocketSession session, HttpRequestContext context) throws IOException {}
 
     protected WebsocketSession buildWebsocketSession(SocketChannel channel, String path) {
         return new WebsocketSession(
