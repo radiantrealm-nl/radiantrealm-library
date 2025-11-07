@@ -7,11 +7,10 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 
-public abstract class AbstractSQLCache<K, V> extends AbstractCache<K, V> {
+public abstract class SQLCache<K, V> extends AbstractCache<K, V> {
 
-    public AbstractSQLCache(@NotNull CachingStrategy strategy) {
+    public SQLCache(@NotNull CachingStrategy strategy) {
         super(strategy);
     }
 
