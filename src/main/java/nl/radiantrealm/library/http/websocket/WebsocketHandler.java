@@ -78,13 +78,10 @@ public abstract class WebsocketHandler implements WebsocketEndpoint {
         }
     }
 
-    protected void onMessage(WebsocketSession session, String message) throws IOException {
-        throw new WebsocketException(WebsocketExitCode.UNSUPPORTED_DATA);
-    }
-
-    protected void onBinary(WebsocketSession session, byte[] bytes) throws IOException {
-        throw new WebsocketException(WebsocketExitCode.UNSUPPORTED_DATA);
-    }
+    protected void onMessage(WebsocketSession session, String message) throws IOException {}
+    protected void onBinary(WebsocketSession session, byte[] bytes) throws IOException {}
+    protected void onPing(WebsocketSession session) throws IOException {}
+    protected void onPong(WebsocketSession session) throws IOException {}
 
     protected void handleClose(WebsocketSession session, WebsocketFrame frame) throws IOException {
         byte[] bytes = frame.payload();
@@ -118,6 +115,8 @@ public abstract class WebsocketHandler implements WebsocketEndpoint {
                 true,
                 frame.payload()
         ));
+
+        onPing(session);
     }
 
     protected void handlePong(WebsocketSession session, WebsocketFrame frame) throws IOException {
@@ -126,6 +125,8 @@ public abstract class WebsocketHandler implements WebsocketEndpoint {
         if (future != null) {
             future.cancel(false);
         }
+
+        onPong(session);
     }
 
     protected void sendMessage(WebsocketSession session, String message) throws IOException {
