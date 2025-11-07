@@ -10,7 +10,7 @@ public record HttpResponse(int statusCode, String mediaType, String responseBody
         this(
                 statusCode.code,
                 MediaType.JSON.type,
-                object.getAsString()
+                object.toString()
         );
     }
 

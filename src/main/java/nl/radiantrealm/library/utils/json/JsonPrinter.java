@@ -65,7 +65,7 @@ public class JsonPrinter {
         private final JsonPrintingContext context;
 
         public PrettyPrinter() {
-            this.context = new JsonPrintingContext(4);
+            this.context = JsonPrintingContext.defaultContext;
         }
 
         public PrettyPrinter(JsonPrintingContext context) {

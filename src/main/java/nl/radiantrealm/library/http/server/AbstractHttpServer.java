@@ -10,36 +10,30 @@ import nl.radiantrealm.library.utils.Logger;
 import java.io.IOException;
 import java.net.InetSocketAddress;
 
-public abstract class AbstractHttpServer {
+public abstract class AbstractHttpServer implements AutoCloseable {
     protected final Logger logger = Logger.getLogger(this.getClass());
     protected final HttpServer server;
     protected final int port;
 
-    public AbstractHttpServer(int port) {
-        this.server = createHttpServer();
+    public AbstractHttpServer(int port) throws IOException {
+        this.server = createHttpServer(port);
         this.port = port;
-
-        if (server == null) {
-            logger.error(String.format("Cannot start HTTP server on port '%s'. HTTP server is not initialized.", port));
-        } else {
-            server.start();
-        }
     }
 
-    protected HttpServer createHttpServer() {
-        try {
-            return HttpServer.create(new InetSocketAddress(port), 0);
-        } catch (Exception e) {
-            logger.error(String.format("Failed to create HTTP server at port '%s'.", port));
-            return null;
-        }
+    @Override
+    public void close() {
+        server.stop(0);
+    }
+
+    public void start() {
+        server.start();
+    }
+
+    protected HttpServer createHttpServer(int port) throws IOException {
+        return HttpServer.create(new InetSocketAddress(port), 0);
     }
 
     protected void register(HttpHandler handler, boolean keepAlive, String path) {
-        if (server == null) {
-            throw new IllegalStateException(String.format("Cannot register HTTP handler at path '%s' on port '%s'. HTTP server is not initialized.", path, port));
-        }
-
         server.createContext(path, exchange -> {
             HttpTools tools = new HttpTools(exchange);
 

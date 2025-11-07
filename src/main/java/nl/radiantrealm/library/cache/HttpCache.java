@@ -10,18 +10,21 @@ import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 
-public abstract class AbstractHTTPCache<K, V> extends AbstractCache<K, V> implements HttpHandler {
+public abstract class HttpCache<K, V> extends AbstractCache<K, V> implements HttpHandler {
+    private final int statusCode;
     private final String mediaType;
 
-    public AbstractHTTPCache(@NotNull CachingStrategy strategy, String mediaType) {
+    public HttpCache(@NotNull CachingStrategy strategy, int statusCode, String mediaType) {
         super(strategy);
 
+        this.statusCode = statusCode;
         this.mediaType = mediaType;
     }
 
-    public AbstractHTTPCache(@NotNull CachingStrategy strategy, MediaType mediaType) {
+    public HttpCache(@NotNull CachingStrategy strategy, StatusCode statusCode, MediaType mediaType) {
         this(
                 strategy,
+                statusCode.code,
                 mediaType.type
         );
     }
@@ -32,14 +35,7 @@ public abstract class AbstractHTTPCache<K, V> extends AbstractCache<K, V> implem
 
         try {
             K key = getKey(exchange);
-
-            if (contains(key)) {
-                sendResponse(tools, get(key));
-            } else {
-                V value = get(key);
-                put(key, value);
-                sendResponse(tools, value);
-            }
+            tools.sendResponse(statusCode, mediaType, valueToString(get(key)));
         } catch (HttpException e) {
             tools.sendResponse(e.response);
         } catch (Exception e) {
@@ -49,8 +45,4 @@ public abstract class AbstractHTTPCache<K, V> extends AbstractCache<K, V> implem
 
     protected abstract String valueToString(V value);
     protected abstract K getKey(HttpExchange exchange) throws Exception;
-
-    protected void sendResponse(HttpTools tools, V value) throws IOException {
-        tools.sendResponse(200, mediaType, valueToString(value));
-    }
 }
