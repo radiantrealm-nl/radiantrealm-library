@@ -1,6 +1,8 @@
 package nl.radiantrealm.library.http.websocket;
 
-import nl.radiantrealm.library.http.model.HttpRequestContext;
+import nl.radiantrealm.library.http.context.HttpRequestContext;
+import nl.radiantrealm.library.http.context.HttpResponseContext;
+import nl.radiantrealm.library.http.enumerator.StatusCode;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -15,11 +17,15 @@ public class WebsocketHandshake {
 
     private WebsocketHandshake() {}
 
-    public static void perform(SocketChannel channel, HttpRequestContext context) throws IOException {
-        String secWebSocketKey = context.headers().getFirst("Sec-WebSocket-Key");
+    public static boolean perform(SocketChannel channel, HttpRequestContext requestContext) throws IOException {
+        String secWebSocketKey = requestContext.headers().getFirst("Sec-WebSocket-Key");
 
         if (secWebSocketKey == null) {
-            return;
+            String response = new HttpResponseContext(StatusCode.BAD_REQUEST, "Missing secure WebSocket key").toString();
+            ByteBuffer responseBuffer = ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8));
+            channel.write(responseBuffer);
+            channel.close();
+            return false;
         }
 
         String secWebSocketAccept;
@@ -32,6 +38,7 @@ public class WebsocketHandshake {
         String httpResponse = generateHttpResponsee(secWebSocketAccept);
         ByteBuffer responseBuffer = ByteBuffer.wrap(httpResponse.getBytes(StandardCharsets.UTF_8));
         channel.write(responseBuffer);
+        return true;
     }
 
     private static String generateAcceptKey(String clientKey) throws NoSuchAlgorithmException {
