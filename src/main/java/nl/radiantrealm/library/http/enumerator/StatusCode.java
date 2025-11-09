@@ -3,6 +3,9 @@ package nl.radiantrealm.library.http.enumerator;
 import nl.radiantrealm.library.utils.json.JsonConvertible;
 import nl.radiantrealm.library.utils.json.JsonObject;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public enum StatusCode implements JsonConvertible {
     CONTINUE(100, null),
     SWITCHING_PROTOCOLS(101, null),
@@ -34,6 +37,18 @@ public enum StatusCode implements JsonConvertible {
     BAD_GATEWAY(502, "Bad Bad  Gateway"),
     SERVICE_UNAVAILABLE(503, "Service Unavailable"),
     GATEWAY_TIMEOUT(504, "Gateway Timeout");
+
+    private static final Map<Integer, StatusCode> map = new HashMap<>();
+
+    static {
+        for (StatusCode statusCode : StatusCode.values()) {
+            map.put(statusCode.code, statusCode);
+        }
+    }
+
+    public static StatusCode valueOfCode(int code) {
+        return map.get(code);
+    }
 
     public final int code;
     public final String message;
