@@ -11,26 +11,28 @@ public record WebsocketConfiguration(
         int maxActiveSessions,
         int incomingBufferSize,
         int sessionBufferSize,
-        int maxFrameLength,
         int maxPayloadLength,
 
         // 3. Protocol and security
         boolean enforceBitMasking,
         boolean allowFragmentation,
-        int maxPingIntervalSeconds,
-        int sessionTimeoutSeconds
+        int sessionTimeoutMillis,
+        int pongTimeoutMillis,
+        int closeTimeoutMillis
 ) {
-    public static final WebsocketConfiguration defaultConfiguration = new WebsocketConfiguration(
-            new InetSocketAddress(0),
-            10,
-            1024,
-            1024,
-            1024,
-            Integer.MAX_VALUE,
-            Integer.MAX_VALUE,
-            true,
-            true,
-            30,
-            300
-    );
+    public static WebsocketConfiguration defaultConfiguration(InetSocketAddress socketAddress) {
+        return new WebsocketConfiguration(
+                socketAddress,
+                10,
+                1024,
+                1024,
+                1024,
+                16777216,
+                true,
+                true,
+                300000,
+                5000,
+                5000
+        );
+    }
 }

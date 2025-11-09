@@ -1,5 +1,8 @@
 package nl.radiantrealm.library.http.websocket;
 
+import nl.radiantrealm.library.http.context.HttpRequestContext;
+import nl.radiantrealm.library.http.context.HttpResponseContext;
+import nl.radiantrealm.library.http.enumerator.StatusCode;
 import nl.radiantrealm.library.utils.Logger;
 
 import java.io.IOException;
@@ -8,12 +11,13 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public abstract class WebsocketServer implements AutoCloseable {
+public abstract class WebsocketServer {
     protected final Logger logger = Logger.getLogger(this.getClass());
 
     protected final ExecutorService executorService;
@@ -32,8 +36,7 @@ public abstract class WebsocketServer implements AutoCloseable {
         executorService.submit(this::IOLoop);
     }
 
-    @Override
-    public void close() throws IOException {
+    public void stop() throws IOException {
         isRunning.set(false);
         selector.wakeup();
         selector.close();
@@ -90,22 +93,51 @@ public abstract class WebsocketServer implements AutoCloseable {
             channel.configureBlocking(false);
             executorService.submit(() -> {
                 try {
-                    String path = WebsocketHandshake.perform(channel);
+                    ByteBuffer buffer = ByteBuffer.allocate(configuration.incomingBufferSize());
+                    int bytesRead = channel.read(buffer);
+
+                    if (bytesRead <= 0) {
+                        return;
+                    }
+
+                    byte[] bytes = new byte[bytesRead];
+                    buffer.flip().get(bytes);
+                    HttpRequestContext requestContext = HttpRequestContext.parse(new String(bytes, StandardCharsets.UTF_8));
+
+                    String path = requestContext.requestURI().getPath();
                     WebsocketEndpoint endpoint = endpointMap.get(path);
 
                     if (endpoint == null) {
+                        String response = new HttpResponseContext(StatusCode.NOT_FOUND, "WebSocket endpoint not found").toString();
+                        ByteBuffer responseBuffer = ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8));
+                        channel.write(responseBuffer);
                         channel.close();
-                    } else {
-                        WebsocketSession session = buildWebsocketSession(channel, path);
-                        channel.register(selector, SelectionKey.OP_READ, session);
-                        endpoint.onOpen(session);
+                        return;
                     }
+
+                    if (endpoint.availableCapacity() < 1) {
+                        String response = new HttpResponseContext(StatusCode.SERVICE_UNAVAILABLE).toString();
+                        ByteBuffer responseBuffer = ByteBuffer.wrap(response.getBytes(StandardCharsets.UTF_8));
+                        channel.write(responseBuffer);
+                        channel.close();
+                        return;
+                    }
+
+                    boolean success = WebsocketHandshake.perform(channel, requestContext);
+                    if (!success) return;
+
+                    WebsocketSession session = buildWebsocketSession(channel, path);
+                    channel.register(selector, SelectionKey.OP_READ, session);
+                    onAccept(session, requestContext);
+                    endpoint.onOpen(session);
                 } catch (Exception e) {
-                    logger.error("Failed to accept client channel.", e);
+                    logger.error("Failed to accept client channel", e);
                 }
             });
         }
     }
+
+    protected void onAccept(WebsocketSession session, HttpRequestContext context) {}
 
     protected WebsocketSession buildWebsocketSession(SocketChannel channel, String path) {
         return new WebsocketSession(
@@ -189,7 +221,7 @@ public abstract class WebsocketServer implements AutoCloseable {
                 return false;
             }
 
-            WebsocketOperatorCode operatorCode = WebsocketOperatorCode.getWsopCode(bytes[0] & 0x0F);
+            WebsocketOperatorCode operatorCode = WebsocketOperatorCode.valueOfCode(bytes[0] & 0x0F);
             if (operatorCode == null) {
                 throw new WebsocketException(WebsocketExitCode.PROTOCOL_ERROR);
             }
@@ -216,13 +248,10 @@ public abstract class WebsocketServer implements AutoCloseable {
                         payload
                 ));
             }
+
             return true;
         } catch (WebsocketException e) {
             session.sendFrame(e.exitCode.generateFrame());
-            session.close();
-            return false;
-        } catch (IOException e) {
-            session.sendFrame(WebsocketExitCode.PROTOCOL_ERROR.generateFrame());
             session.close();
             return false;
         }

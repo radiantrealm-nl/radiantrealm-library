@@ -28,7 +28,7 @@ public enum WebsocketExitCode {
         }
     }
 
-    public static WebsocketExitCode getExitCode(int code) {
+    public static WebsocketExitCode valueOfCode(int code) {
         return map.get(code);
     }
 
