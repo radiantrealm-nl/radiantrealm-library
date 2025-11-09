@@ -1,48 +1,41 @@
 package nl.radiantrealm.library.cache;
 
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
+import nl.radiantrealm.library.http.server.ExtendedHttpHandler;
+import nl.radiantrealm.library.http.context.HttpExchangeContext;
+import nl.radiantrealm.library.http.context.HttpResponseContext;
 import nl.radiantrealm.library.http.enumerator.MediaType;
 import nl.radiantrealm.library.http.enumerator.StatusCode;
-import nl.radiantrealm.library.http.model.HttpException;
-import nl.radiantrealm.library.http.model.HttpTools;
+import nl.radiantrealm.library.http.HttpException;
 import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 
-public abstract class HttpCache<K, V> extends AbstractCache<K, V> implements HttpHandler {
-    private final int statusCode;
-    private final String mediaType;
+public abstract class HttpCache<K, V> extends AbstractCache<K, V> implements ExtendedHttpHandler {
 
-    public HttpCache(@NotNull CachingStrategy strategy, int statusCode, String mediaType) {
+    public HttpCache(@NotNull CachingStrategy strategy) {
         super(strategy);
-
-        this.statusCode = statusCode;
-        this.mediaType = mediaType;
     }
 
-    public HttpCache(@NotNull CachingStrategy strategy, StatusCode statusCode, MediaType mediaType) {
-        this(
-                strategy,
-                statusCode.code,
-                mediaType.type
-        );
-    }
+    protected abstract K getKey(HttpExchangeContext exchangeContext) throws Exception;
 
     @Override
-    public void handle(HttpExchange exchange) throws IOException {
-        HttpTools tools = new HttpTools(exchange);
-
-        try {
-            K key = getKey(exchange);
-            tools.sendResponse(statusCode, mediaType, valueToString(get(key)));
+    public void handle(HttpExchangeContext exchangeContext) throws IOException {
+        try (exchangeContext) {
+            K key = getKey(exchangeContext);
+            exchangeContext.sendResponse(buildHttpResponse(get(key)));
         } catch (HttpException e) {
-            tools.sendResponse(e.response);
+            exchangeContext.sendResponse(e.responseContext);
         } catch (Exception e) {
-            tools.sendStatusResponse(StatusCode.SERVER_ERROR);
+            exchangeContext.sendStatusResponse(StatusCode.SERVER_ERROR);
         }
     }
 
-    protected abstract String valueToString(V value);
-    protected abstract K getKey(HttpExchange exchange) throws Exception;
+    protected HttpResponseContext buildHttpResponse(V value) {
+        return new HttpResponseContext(
+                StatusCode.OK,
+                MediaType.JSON,
+                value.toString().getBytes(StandardCharsets.UTF_8)
+        );
+    }
 }
