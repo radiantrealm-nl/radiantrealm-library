@@ -19,7 +19,7 @@ public enum WebsocketOperatorCode {
         }
     }
 
-    public static WebsocketOperatorCode getWsopCode(int code) {
+    public static WebsocketOperatorCode valueOfCode(int code) {
         return map.get(code);
     }
 
