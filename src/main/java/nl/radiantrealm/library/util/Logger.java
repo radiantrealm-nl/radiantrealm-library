@@ -1,5 +1,7 @@
-package nl.radiantrealm.library.utils;
+package nl.radiantrealm.library.util;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
@@ -40,7 +42,13 @@ public class Logger {
     }
 
     private void log(Level level, String message, Throwable cause) {
-        log(level, message + "\n" + cause);
+        StringBuilder builder = new StringBuilder(message);
+        builder.append('\n');
+        StringWriter writer = new StringWriter();
+        PrintWriter printer = new PrintWriter(writer);
+        cause.printStackTrace(printer);
+        builder.append(writer);
+        log(level, builder.toString());
     }
 
     public void info(String message) {

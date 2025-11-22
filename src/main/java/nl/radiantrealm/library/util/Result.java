@@ -1,9 +1,9 @@
-package nl.radiantrealm.library.utils;
+package nl.radiantrealm.library.util;
 
-import nl.radiantrealm.library.utils.function.NilFunction;
-import nl.radiantrealm.library.utils.function.ThrowingBiFunction;
-import nl.radiantrealm.library.utils.function.ThrowingFunction;
-import nl.radiantrealm.library.utils.function.ThrowingNilFunction;
+import nl.radiantrealm.library.util.function.NilFunction;
+import nl.radiantrealm.library.util.function.ThrowingBiFunction;
+import nl.radiantrealm.library.util.function.ThrowingFunction;
+import nl.radiantrealm.library.util.function.ThrowingNilFunction;
 
 import java.util.Optional;
 import java.util.function.BiFunction;

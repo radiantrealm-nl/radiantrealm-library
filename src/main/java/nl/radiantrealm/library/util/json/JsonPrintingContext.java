@@ -1,4 +1,4 @@
-package nl.radiantrealm.library.utils.json;
+package nl.radiantrealm.library.util.json;
 
 public record JsonPrintingContext(
         boolean prettyPrint,
