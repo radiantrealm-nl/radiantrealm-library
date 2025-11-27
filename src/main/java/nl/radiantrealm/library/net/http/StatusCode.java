@@ -1,12 +1,9 @@
-package nl.radiantrealm.library.http.enumerator;
-
-import nl.radiantrealm.library.utils.json.JsonConvertible;
-import nl.radiantrealm.library.utils.json.JsonObject;
+package nl.radiantrealm.library.net.http;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public enum StatusCode implements JsonConvertible {
+public enum StatusCode {
     CONTINUE(100, null),
     SWITCHING_PROTOCOLS(101, null),
     PROCESSING(102, null),
@@ -56,34 +53,5 @@ public enum StatusCode implements JsonConvertible {
     StatusCode(int code, String message) {
         this.code = code;
         this.message = message;
-    }
-
-    public String keyType() {
-        if (message == null) return null;
-        if (code < 300) return "info";
-        if (code < 400) return "redirect";
-        if (code < 600) return "error";
-        return null;
-    }
-
-    public JsonObject toJson(String key, String message) {
-        JsonObject object = new JsonObject();
-        object.add(key, message);
-        return object;
-    }
-
-    public JsonObject toJson(String message) {
-        String key = keyType();
-
-        if (key == null) {
-            return new JsonObject();
-        }
-
-        return toJson(key, message);
-    }
-
-    @Override
-    public JsonObject toJson() {
-        return toJson(message);
     }
 }
