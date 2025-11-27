@@ -1,4 +1,4 @@
-package nl.radiantrealm.library.http.enumerator;
+package nl.radiantrealm.library.net.http;
 
 import java.util.HashMap;
 import java.util.Map;
