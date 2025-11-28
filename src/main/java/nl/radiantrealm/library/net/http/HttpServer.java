@@ -9,6 +9,7 @@ import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -45,10 +46,7 @@ public class HttpServer extends Server {
                 return;
             }
 
-            VirtualByteBuffer inboundBuffer = connection.inboundBuffer;
-            synchronized (inboundBuffer) {
-                inboundBuffer.add(buffer.flip());
-            }
+            connection.addInboundBuffer(buffer.flip());
 
             executorService.submit(() -> {
                 try {
@@ -61,14 +59,8 @@ public class HttpServer extends Server {
                     String path = request.requestURI().getPath();
                     for (Map.Entry<String, HttpHandler> entry : handlerMap.entrySet()) {
                         if (path.startsWith(entry.getKey())) {
-                            try {
-                                entry.getValue().handle(new HttpExchange(connection, request));
-                                return;
-                            } catch (IOException e) {
-                                logger.error("Exception while handling request", e);
-                                sendClosingResponse(connection, HttpResponse.status(StatusCode.SERVER_ERROR));
-                                return;
-                            }
+                            entry.getValue().handle(new HttpExchange(connection, request));
+                            return;
                         }
                     }
 
@@ -90,7 +82,7 @@ public class HttpServer extends Server {
             try {
                 synchronized (outboundBuffer) {
                     while (!outboundBuffer.isEmpty()) {
-                        ByteBuffer buffer = ByteBuffer.wrap(outboundBuffer.peek(4096));
+                        ByteBuffer buffer = ByteBuffer.wrap(outboundBuffer.peek(1024));
                         outboundBuffer.poll(connection.channel.write(buffer));
 
                         if (buffer.hasRemaining()) {

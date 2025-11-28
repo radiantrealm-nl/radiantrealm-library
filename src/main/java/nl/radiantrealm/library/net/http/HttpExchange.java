@@ -3,7 +3,6 @@ package nl.radiantrealm.library.net.http;
 import nl.radiantrealm.library.net.io.InterestOp;
 import nl.radiantrealm.library.util.VirtualByteBuffer;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
 
 public record HttpExchange(
@@ -12,7 +11,7 @@ public record HttpExchange(
 ) implements AutoCloseable {
 
     @Override
-    public void close() throws IOException {
+    public void close() {
         connection.close();
     }
 
