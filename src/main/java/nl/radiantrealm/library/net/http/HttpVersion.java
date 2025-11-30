@@ -1,11 +1,13 @@
 package nl.radiantrealm.library.net.http;
 
 public enum HttpVersion {
+    HTTP_1_0("HTTP/1.0"),
     HTTP_1_1("HTTP/1.1"),
     HTTP_2("HTTP/2");
 
     public static HttpVersion getVersion(String string) {
         return switch (string.toUpperCase()) {
+            case "HTTP/1.0" -> HTTP_1_0;
             case "HTTP/1.1" -> HTTP_1_1;
             case "HTTP/2" -> HTTP_2;
             default -> null;
