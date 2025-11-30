@@ -1,33 +1,40 @@
 package nl.radiantrealm.library.net.http;
 
 import nl.radiantrealm.library.net.io.InterestOp;
-import nl.radiantrealm.library.net.io.Server;
+import nl.radiantrealm.library.net.io.SelectorEngine;
 import nl.radiantrealm.library.util.VirtualByteBuffer;
 
 import java.io.IOException;
-import java.net.InetSocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
+import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
-public class HttpServer extends Server {
+public class HttpServer extends SelectorEngine {
     private final Map<String, HttpHandler> handlerMap = new HashMap<>();
+    private final HttpConfiguration configuration;
+    private final ServerSocketChannel serverChannel;
 
-    public HttpServer(InetSocketAddress socketAddress) throws IOException {
-        super(socketAddress);
+    public HttpServer(HttpConfiguration configuration) throws IOException {
+        super(configuration.threadPoolSize());
+
+        this.configuration = configuration;
+        this.serverChannel = ServerSocketChannel.open();
+        this.serverChannel.configureBlocking(false);
+        this.serverChannel.bind(configuration.socketAddress());
+        this.serverChannel.register(selector, SelectionKey.OP_ACCEPT);
     }
 
     public void createContext(String path, HttpHandler handler) {
-        handlerMap.put(path, handler);
+        handlerMap.put(configuration.pathPrefix() + path, handler);
     }
 
     @Override
     protected void handleRead(SelectionKey key) {
         if (key.attachment() instanceof HttpConnection connection) {
-            ByteBuffer buffer = ByteBuffer.allocate(4096);
+            ByteBuffer buffer = ByteBuffer.allocate(configuration.incomingBufferSize());
 
             try {
                 int read = connection.channel.read(buffer);
@@ -82,7 +89,7 @@ public class HttpServer extends Server {
             try {
                 synchronized (outboundBuffer) {
                     while (!outboundBuffer.isEmpty()) {
-                        ByteBuffer buffer = ByteBuffer.wrap(outboundBuffer.peek(1024));
+                        ByteBuffer buffer = ByteBuffer.wrap(outboundBuffer.peek(configuration.outgoingBufferSize()));
                         outboundBuffer.poll(connection.channel.write(buffer));
 
                         if (buffer.hasRemaining()) {
