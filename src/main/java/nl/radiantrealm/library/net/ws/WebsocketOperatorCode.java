@@ -5,7 +5,7 @@ import java.util.Map;
 
 public enum WebsocketOperatorCode {
     CONTINUE(0x00),
-    UTF_8(0x01),
+    TEXT(0x01),
     BINARY(0x02),
     CLOSE(0x08),
     PING(0x09),
