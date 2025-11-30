@@ -53,13 +53,13 @@ public abstract class SocketConnection implements AutoCloseable {
         key.selector().wakeup();
     }
 
-    public void enableInterestOp(InterestOp op) {
+    public synchronized void enableInterestOp(InterestOp op) {
         engine.addKeyAction(new KeyAction(
                 key, op, true
         ));
     }
 
-    public void disableInterestOp(InterestOp op) {
+    public synchronized void disableInterestOp(InterestOp op) {
         engine.addKeyAction(new KeyAction(
                 key, op, false
         ));
