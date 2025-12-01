@@ -1,9 +1,6 @@
 package nl.radiantrealm.library.net.ws;
 
-import nl.radiantrealm.library.net.http.HttpConnection;
-import nl.radiantrealm.library.net.http.HttpExchange;
-import nl.radiantrealm.library.net.http.HttpHandler;
-import nl.radiantrealm.library.net.http.HttpResponse;
+import nl.radiantrealm.library.net.http.*;
 import nl.radiantrealm.library.net.io.InterestOp;
 import nl.radiantrealm.library.net.io.SelectorEngine;
 import nl.radiantrealm.library.util.VirtualByteBuffer;
@@ -11,18 +8,36 @@ import nl.radiantrealm.library.util.VirtualByteBuffer;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Queue;
-import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.*;
 
 public abstract class WebsocketEngine extends SelectorEngine implements HttpHandler {
     protected final Queue<HttpConnection> pendingUpgrades = new ConcurrentLinkedQueue<>();
-
+    protected final Map<String, WebsocketSession> sessionMap = new ConcurrentHashMap<>();
+    protected final Map<String, ScheduledFuture<?>> scheduledFutureMap = new ConcurrentHashMap<>();
+    protected final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
     protected final WebsocketConfiguration configuration;
 
     public WebsocketEngine(WebsocketConfiguration configuration) throws IOException {
         super(configuration.threadPoolSize());
 
         this.configuration = configuration;
+    }
+
+    @Override
+    public void start() {
+        super.start();
+
+        scheduledExecutorService.scheduleWithFixedDelay(
+                this::checkSessionTimeout,
+                configuration.checkTimeoutMillis(),
+                configuration.checkTimeoutMillis(),
+                TimeUnit.MILLISECONDS
+        );
     }
 
     @Override
@@ -33,11 +48,7 @@ public abstract class WebsocketEngine extends SelectorEngine implements HttpHand
         connection.key.cancel();
 
         ByteBuffer buffer = ByteBuffer.wrap(response.getBytes());
-        VirtualByteBuffer outboundBuffer = connection.outboundBuffer;
-
-        synchronized (outboundBuffer) {
-            outboundBuffer.add(buffer);
-        }
+        connection.outboundBuffer.add(buffer);
 
         pendingUpgrades.add(connection);
         selector.wakeup();
@@ -61,15 +72,23 @@ public abstract class WebsocketEngine extends SelectorEngine implements HttpHand
 
                 executorService.submit(() -> {
                     try {
-                        upgradeSession(session);
+                        onOpen(session);
                     } catch (WebsocketException e) {
-                        sendClosingFrame(session, e.frame);
+                        try (session) {
+                            sendFrame(session, e.frame);
+                        }
                     } catch (RuntimeException e) {
-                        sendClosingFrame(session, WebsocketExitCode.INTERNAL_SERVER_ERROR.generateFrame());
+                        try (session) {
+                            sendFrame(session, WebsocketExitCode.INVALID_PAYLOAD_DATA.generateFrame());
+                        }
                     }
                 });
             } catch (IOException e) {
-                logger.error("Exception while upgrading request", e);
+                logger.error("Exception while upgrading connection", e);
+
+                try {
+                    connection.close(true);
+                } catch (IOException ignored) {}
             }
         }
 
@@ -79,41 +98,46 @@ public abstract class WebsocketEngine extends SelectorEngine implements HttpHand
     @Override
     protected void handleRead(SelectionKey key) {
         if (key.attachment() instanceof WebsocketSession session) {
-            ByteBuffer buffer = ByteBuffer.allocate(1024);
+            ByteBuffer buffer = ByteBuffer.allocate(configuration.incomingBufferSize());
 
             try {
-                int read = session.channel.read(buffer);
+                int written = session.channel.read(buffer);
 
-                if (read == -1) {
+                if (written == -1) {
                     session.close(true);
-                    closeSession(session);
+
+                    if (sessionMap.containsKey(session.sessionID)) {
+                        executorService.submit(() -> onClose(session));
+                    }
                     return;
                 }
 
-                if (read == 0) {
+                if (written == 0) {
                     return;
                 }
             } catch (IOException e) {
                 logger.error("Exception while reading channel", e);
-                sendClosingFrame(session, WebsocketExitCode.INTERNAL_SERVER_ERROR.generateFrame());
                 return;
             }
 
             session.addInboundBuffer(buffer.flip());
-
             executorService.submit(() -> {
+                WebsocketFrame frame = session.aggregatedWebsocketFrame.parse();
+
+                if (frame == null) {
+                    return;
+                }
+
                 try {
-                    WebsocketFrame frame = session.aggregatedWebsocketFrame.parse();
-
-                    if (frame == null) {
-                        return;
-                    }
-
                     onFrame(session, frame);
                 } catch (WebsocketException e) {
-                    sendClosingFrame(session, e.frame);
+                    try (session) {
+                        sendFrame(session, e.frame);
+                    }
                 } catch (RuntimeException e) {
-                    sendClosingFrame(session, WebsocketExitCode.INTERNAL_SERVER_ERROR.generateFrame());
+                    try (session) {
+                        sendFrame(session, WebsocketExitCode.INVALID_PAYLOAD_DATA.generateFrame());
+                    }
                 }
             });
         }
@@ -127,7 +151,7 @@ public abstract class WebsocketEngine extends SelectorEngine implements HttpHand
             try {
                 synchronized (outboundBuffer) {
                     while (!outboundBuffer.isEmpty()) {
-                        ByteBuffer buffer = ByteBuffer.wrap(outboundBuffer.peek(1024));
+                        ByteBuffer buffer = ByteBuffer.wrap(outboundBuffer.peek(configuration.outgoingBufferSize()));
                         int written = session.channel.write(buffer);
                         outboundBuffer.poll(written);
 
@@ -142,35 +166,199 @@ public abstract class WebsocketEngine extends SelectorEngine implements HttpHand
 
                         if (session.awaitClosing.get()) {
                             session.close(true);
+                            executorService.submit(() -> onClose(session));
                         }
                     }
                 }
             } catch (IOException e) {
-                logger.error("Error while writing channel", e);
-                sendClosingFrame(session, WebsocketExitCode.INTERNAL_SERVER_ERROR.generateFrame());
-            } catch (RuntimeException e) {
-                sendClosingFrame(session, WebsocketExitCode.INTERNAL_SERVER_ERROR.generateFrame());
+                logger.error("Exception while writing channel", e);
             }
         }
     }
 
-    protected void upgradeSession(WebsocketSession session) {}
-    protected void onFrame(WebsocketSession session, WebsocketFrame frame) {}
-    protected void closeSession(WebsocketSession session) {}
+    protected void onMessage(WebsocketSession session, String message) {}
+    protected void onBinary(WebsocketSession session, byte[] bytes) {}
 
-    protected void sendClosingFrame(WebsocketSession session, WebsocketFrame frame) {
-        try (session) {
-            ByteBuffer buffer = ByteBuffer.wrap(frame.getBytes());
-            VirtualByteBuffer outboundBuffer = session.outboundBuffer;
+    protected void sendFrame(WebsocketSession session, WebsocketFrame frame) {
+        ByteBuffer buffer = ByteBuffer.wrap(frame.getBytes());
+        session.addOutboundBuffer(buffer);
+        session.enableInterestOp(InterestOp.OP_WRITE);
+        session.wakeup();
+    }
 
-            synchronized (outboundBuffer) {
-                outboundBuffer.add(buffer);
+    protected void sendMessage(WebsocketSession session, String message) {
+        sendFrame(session, new WebsocketFrame(
+                WebsocketOperatorCode.TEXT,
+                true,
+                message.getBytes(StandardCharsets.UTF_8)
+        ));
+    }
+
+    protected void sendBinary(WebsocketSession session, byte[] bytes) {
+        sendFrame(session, new WebsocketFrame(
+                WebsocketOperatorCode.BINARY,
+                true,
+                bytes
+        ));
+    }
+
+    protected void onOpen(WebsocketSession session) {
+        sessionMap.put(session.sessionID, session);
+    }
+
+    protected void onClose(WebsocketSession session) {
+        sessionMap.remove(session.sessionID);
+        cancelScheduledFuture(session);
+    }
+
+    protected void onFrame(WebsocketSession session, WebsocketFrame frame) {
+        session.lastActivityMillis.set(System.currentTimeMillis());
+
+        switch (frame.operatorCode()) {
+            case CONTINUE, TEXT, BINARY -> glueFrames(session, frame);
+            case CLOSE -> handleClose(session, frame);
+            case PING -> handlePing(session);
+            case PONG -> handlePong(session);
+        }
+    }
+
+    protected void glueFrames(WebsocketSession session, WebsocketFrame frame) {
+        Queue<WebsocketFrame> queue = session.fragmentedFrames;
+
+        WebsocketFrame result = null;
+        synchronized (queue) {
+            if (frame.operatorCode().equals(WebsocketOperatorCode.CONTINUE)) {
+                queue.add(frame);
+
+                if (frame.finalMessage()) {
+                    List<WebsocketFrame> list = new ArrayList<>(queue.size());
+                    long payloadLength = 0;
+
+                    for (WebsocketFrame websocketFrame : queue) {
+                        if (list.isEmpty() && !websocketFrame.operatorCode().equals(WebsocketOperatorCode.CONTINUE)) {
+                            throw new WebsocketException(WebsocketExitCode.PROTOCOL_ERROR.generateFrame("Invalid frame fragmentation"));
+                        } else if (!websocketFrame.operatorCode().equals(WebsocketOperatorCode.CONTINUE)) {
+                            throw new WebsocketException(WebsocketExitCode.PROTOCOL_ERROR.generateFrame("Invalid frame fragmentation"));
+                        }
+
+                        list.add(queue.poll());
+                        payloadLength += websocketFrame.payload().length;
+
+                        if (payloadLength > Integer.MAX_VALUE) {
+                            throw new WebsocketException(WebsocketExitCode.MESSAGE_TOO_BIG.generateFrame());
+                        }
+
+                        if (frame.finalMessage()) {
+                            break;
+                        }
+                    }
+
+                    byte[] resultBytes = new byte[(int) payloadLength];
+                    int index = 0;
+
+                    for (WebsocketFrame websocketFrame : list) {
+                        byte[] payloadBytes = websocketFrame.payload();
+                        System.arraycopy(payloadBytes, 0, resultBytes, index, payloadBytes.length);
+                        index += payloadBytes.length;
+                    }
+
+                    result = new WebsocketFrame(
+                            list.getFirst().operatorCode(),
+                            true,
+                            resultBytes
+                    );
+                }
+            } else if (frame.finalMessage()) {
+                result = frame;
+            } else {
+                queue.add(frame);
             }
-
-            session.enableInterestOp(InterestOp.OP_WRITE);
-            session.wakeup();
         }
 
-        closeSession(session);
+        if (result != null) {
+            switch (result.operatorCode()) {
+                case TEXT -> onMessage(session, new String(result.payload(), StandardCharsets.UTF_8));
+                case BINARY -> onBinary(session, result.payload());
+            }
+        }
+    }
+
+    protected void handleClose(WebsocketSession session, WebsocketFrame frame) {
+        byte[] bytes = frame.payload();
+
+        if (bytes.length < 2 || bytes.length > 125) {
+            throw new WebsocketException(WebsocketExitCode.PROTOCOL_ERROR.generateFrame("Invalid close frame"));
+        }
+
+        WebsocketExitCode exitCode = WebsocketExitCode.valueOfCode((bytes[0] & 0xFF) << 8 | bytes[1] & 0xFF);
+
+        if (exitCode == null) {
+            throw new WebsocketException(WebsocketExitCode.PROTOCOL_ERROR.generateFrame("Invalid status code"));
+        }
+
+        if (!session.acknowledgedClosing.get()) {
+            sendFrame(session, new WebsocketFrame(
+                    WebsocketOperatorCode.CLOSE,
+                    true,
+                    frame.payload()
+            ));
+        } else {
+            try (session) {
+                onClose(session);
+            }
+        }
+    }
+
+    protected void handlePing(WebsocketSession session) {
+        cancelScheduledFuture(session);
+        sendFrame(session, new WebsocketFrame(
+                WebsocketOperatorCode.PING,
+                true,
+                new byte[0]
+        ));
+    }
+
+    protected void handlePong(WebsocketSession session) {
+        cancelScheduledFuture(session);
+    }
+
+    protected void checkSessionTimeout() {
+        long timestamp = System.currentTimeMillis();
+
+        for (WebsocketSession session : sessionMap.values()) {
+            if (scheduledFutureMap.containsKey(session.sessionID)) {
+                continue;
+            }
+
+            if (timestamp - session.lastActivityMillis.get() > configuration.sessionTimeoutMillis()) {
+                scheduledFutureMap.put(session.sessionID, scheduledExecutorService.schedule(() -> {
+                    sendClosingHandshake(session, WebsocketExitCode.GOING_AWAY.generateFrame("PING timeout"));
+                }, configuration.pingTimeoutMillis(), TimeUnit.MILLISECONDS));
+
+                sendFrame(session, new WebsocketFrame(
+                        WebsocketOperatorCode.PING,
+                        true,
+                        new byte[0]
+                ));
+            }
+        }
+    }
+
+    protected void sendClosingHandshake(WebsocketSession session, WebsocketFrame frame) {
+        scheduledFutureMap.put(session.sessionID, scheduledExecutorService.schedule(() -> {
+            try (session) {
+                onClose(session);
+            }
+        }, configuration.closeTimeoutMillis(), TimeUnit.MILLISECONDS));
+
+        session.acknowledgedClosing.set(true);
+        sendFrame(session, frame);
+    }
+
+    protected void cancelScheduledFuture(WebsocketSession session) {
+        ScheduledFuture<?> future = scheduledFutureMap.get(session.sessionID);
+        if (future != null) {
+            future.cancel(false);
+        }
     }
 }
