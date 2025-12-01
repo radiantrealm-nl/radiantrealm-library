@@ -16,8 +16,8 @@ import java.util.concurrent.atomic.AtomicLong;
 public class WebsocketSession extends SocketConnection {
     public final String sessionID = UUID.randomUUID().toString();
 
-    public final AggregatedWebsocketFrame aggregatedWebsocketFrame = new AggregatedWebsocketFrame(this);
     public final Queue<WebsocketFrame> fragmentedFrames = new ConcurrentLinkedQueue<>();
+    public final AggregatedWebsocketFrame aggregatedWebsocketFrame = new AggregatedWebsocketFrame(this);
     public final AtomicLong lastActivityMillis = new AtomicLong(System.currentTimeMillis());
     public final AtomicBoolean acknowledgedClosing = new AtomicBoolean(false);
 
