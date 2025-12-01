@@ -1,7 +1,7 @@
 package nl.radiantrealm.library.processor;
 
-import nl.radiantrealm.library.http.enumerator.StatusCode;
-import nl.radiantrealm.library.utils.json.JsonObject;
+import nl.radiantrealm.library.net.http.StatusCode;
+import nl.radiantrealm.library.util.json.JsonObject;
 
 public record ProcessResult(int statusCode, JsonObject object) {
 

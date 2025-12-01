@@ -1,38 +1,32 @@
 package nl.radiantrealm.library.cache;
 
-import nl.radiantrealm.library.http.server.ExtendedHttpHandler;
-import nl.radiantrealm.library.http.context.HttpExchangeContext;
-import nl.radiantrealm.library.http.context.HttpResponseContext;
-import nl.radiantrealm.library.http.enumerator.MediaType;
-import nl.radiantrealm.library.http.enumerator.StatusCode;
-import nl.radiantrealm.library.http.HttpException;
+import nl.radiantrealm.library.net.http.*;
 import org.jetbrains.annotations.NotNull;
 
-import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-public abstract class HttpCache<K, V> extends AbstractCache<K, V> implements ExtendedHttpHandler {
+public abstract class HttpCache<K, V> extends AbstractCache<K, V> implements HttpHandler {
 
     public HttpCache(@NotNull CachingStrategy strategy) {
         super(strategy);
     }
 
-    protected abstract K getKey(HttpExchangeContext exchangeContext) throws Exception;
+    protected abstract K getKey(HttpExchange exchange);
 
     @Override
-    public void handle(HttpExchangeContext exchangeContext) throws IOException {
-        try (exchangeContext) {
-            K key = getKey(exchangeContext);
-            exchangeContext.sendResponse(buildHttpResponse(get(key)));
+    public void handle(HttpExchange exchange) {
+        try (exchange) {
+            K key = getKey(exchange);
+            exchange.sendResponse(buildHttpResponse(get(key)));
         } catch (HttpException e) {
-            exchangeContext.sendResponse(e.responseContext);
+            exchange.sendResponse(e.response);
         } catch (Exception e) {
-            exchangeContext.sendStatusResponse(StatusCode.SERVER_ERROR);
+            exchange.sendResponse(HttpResponse.status(StatusCode.SERVER_ERROR));
         }
     }
 
-    protected HttpResponseContext buildHttpResponse(V value) {
-        return new HttpResponseContext(
+    protected HttpResponse buildHttpResponse(V value) {
+        return HttpResponse.wrap(
                 StatusCode.OK,
                 MediaType.JSON,
                 value.toString().getBytes(StandardCharsets.UTF_8)

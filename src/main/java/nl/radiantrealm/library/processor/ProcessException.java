@@ -1,8 +1,8 @@
 package nl.radiantrealm.library.processor;
 
-import nl.radiantrealm.library.utils.function.ThrowingBiFunction;
-import nl.radiantrealm.library.utils.function.ThrowingFunction;
-import nl.radiantrealm.library.utils.function.ThrowingNilFunction;
+import nl.radiantrealm.library.util.function.ThrowingBiFunction;
+import nl.radiantrealm.library.util.function.ThrowingFunction;
+import nl.radiantrealm.library.util.function.ThrowingNilFunction;
 
 public class ProcessException extends RuntimeException {
     public final ProcessResult result;
