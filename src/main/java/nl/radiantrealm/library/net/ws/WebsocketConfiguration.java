@@ -5,6 +5,7 @@ public record WebsocketConfiguration(
         int maxActiveSessions,
         int incomingBufferSize,
         int outgoingBufferSize,
+        int checkTimeoutMillis,
         int sessionTimeoutMillis,
         int pingTimeoutMillis,
         int closeTimeoutMillis
@@ -14,6 +15,7 @@ public record WebsocketConfiguration(
             1024,
             1024,
             1024,
+            5000,
             300000,
             5000,
             5000
