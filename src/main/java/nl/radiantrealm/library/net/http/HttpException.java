@@ -1,15 +1,16 @@
 package nl.radiantrealm.library.net.http;
 
+import java.util.Objects;
+
 public class HttpException extends RuntimeException {
     public final HttpResponse response;
 
     public HttpException(HttpResponse response) {
-        this.response = response;
+        this.response = Objects.requireNonNull(response);
     }
 
-    public HttpException(Exception e, HttpResponse response) {
+    public HttpException(RuntimeException e, HttpResponse response) {
         super(e);
-
-        this.response = response;
+        this.response = Objects.requireNonNull(response);
     }
 }
