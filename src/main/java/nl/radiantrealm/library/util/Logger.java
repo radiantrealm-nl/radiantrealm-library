@@ -27,6 +27,7 @@ public class Logger {
 
     private enum Level {
         INFO,
+        WARNING,
         ERROR,
         DEBUG,
     }
@@ -57,6 +58,14 @@ public class Logger {
 
     public void info(String message, Throwable cause) {
         log(Level.INFO, message, cause);
+    }
+
+    public void warning(String message) {
+        log(Level.WARNING, message);
+    }
+
+    public void warning(String message, Throwable cause) {
+        log(Level.WARNING, message, cause);
     }
 
     public void error(String message) {
