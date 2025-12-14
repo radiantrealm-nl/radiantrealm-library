@@ -1,15 +1,27 @@
 package nl.radiantrealm.library.net.http;
 
+import nl.radiantrealm.library.net.io.InterestOp;
 import nl.radiantrealm.library.net.io.SelectorEngine;
 import nl.radiantrealm.library.net.io.SocketConnection;
 
-import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
 
 public class HttpConnection extends SocketConnection {
-    public final AggregatedHttpRequest aggregatedHttpRequest = new AggregatedHttpRequest(this);
+    public final AggregatedHttpParser parser = new AggregatedHttpParser(this);
 
-    public HttpConnection(SelectorEngine engine, SelectionKey key, SocketChannel channel) {
-        super(engine, key, channel);
+    public HttpConnection(SelectorEngine engine, SocketChannel channel) {
+        super(engine, channel);
+    }
+
+    public void sendRequest(HttpRequest request) {
+        addOutboundBuffer(request.getBytes());
+        enableInterestOp(InterestOp.OP_WRITE);
+        wakeup();
+    }
+
+    public void sendResponse(HttpResponse response) {
+        addOutboundBuffer(response.getBytes());
+        enableInterestOp(InterestOp.OP_WRITE);
+        wakeup();
     }
 }

@@ -1,7 +1,5 @@
 package nl.radiantrealm.library.net.io;
 
-import nl.radiantrealm.library.util.VirtualByteBuffer;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SelectionKey;
@@ -14,13 +12,13 @@ public abstract class SocketConnection implements AutoCloseable {
     public final AtomicBoolean awaitClosing = new AtomicBoolean(false);
 
     private final SelectorEngine engine;
-    public final SelectionKey key;
     public final SocketChannel channel;
+    public final SelectionKey key;
 
-    public SocketConnection(SelectorEngine engine, SelectionKey key, SocketChannel channel) {
+    public SocketConnection(SelectorEngine engine, SocketChannel channel) {
         this.engine = engine;
-        this.key = key;
         this.channel = channel;
+        this.key = channel.keyFor(engine.selector);
     }
 
     @Override
@@ -28,39 +26,49 @@ public abstract class SocketConnection implements AutoCloseable {
         awaitClosing.set(true);
     }
 
-    public void close(boolean force) throws IOException {
-        if (force) {
+    public void silentClose() {
+        try {
             key.cancel();
             channel.close();
-        } else {
-            awaitClosing.set(true);
+        } catch (IOException ignored) {}
+    }
+
+    public void wakeup() {
+        engine.selector.wakeup();
+    }
+
+    public void addInboundBuffer(byte[] bytes) {
+        synchronized (inboundBuffer) {
+            inboundBuffer.add(bytes);
         }
     }
 
     public void addInboundBuffer(ByteBuffer buffer) {
-        synchronized (inboundBuffer) {
-            inboundBuffer.add(buffer);
+        byte[] bytes = new byte[buffer.remaining()];
+        buffer.get(bytes);
+        addInboundBuffer(bytes);
+    }
+
+    public void addOutboundBuffer(byte[] bytes) {
+        synchronized (outboundBuffer) {
+            outboundBuffer.add(bytes);
         }
     }
 
     public void addOutboundBuffer(ByteBuffer buffer) {
-        synchronized (outboundBuffer) {
-            outboundBuffer.add(buffer);
-        }
-    }
-
-    public void wakeup() {
-        key.selector().wakeup();
+        byte[] bytes = new byte[buffer.remaining()];
+        buffer.get(bytes);
+        addOutboundBuffer(bytes);
     }
 
     public synchronized void enableInterestOp(InterestOp op) {
-        engine.addKeyAction(new KeyAction(
+        engine.addKeyAction(new SelectorEngine.KeyAction(
                 key, op, true
         ));
     }
 
     public synchronized void disableInterestOp(InterestOp op) {
-        engine.addKeyAction(new KeyAction(
+        engine.addKeyAction(new SelectorEngine.KeyAction(
                 key, op, false
         ));
     }

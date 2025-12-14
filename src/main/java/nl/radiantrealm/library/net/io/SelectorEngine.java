@@ -15,14 +15,14 @@ import java.util.concurrent.atomic.AtomicBoolean;
 public abstract class SelectorEngine {
     protected final Logger logger = Logger.getLogger(this.getClass());
     protected final AtomicBoolean isRunning = new AtomicBoolean(false);
-    protected final Queue<KeyAction> keyActionQueue = new ConcurrentLinkedQueue<>();
+    protected final Queue<KeyAction> pendingKeyActions = new ConcurrentLinkedQueue<>();
 
-    protected final Selector selector;
     protected final ExecutorService executorService;
+    protected final Selector selector;
 
-    public SelectorEngine(int poolSize) throws IOException {
+    public SelectorEngine(SelectorConfiguration configuration) throws IOException {
+        this.executorService = Executors.newFixedThreadPool(Math.max(2, configuration.threadPoolSize()));
         this.selector = Selector.open();
-        this.executorService = Executors.newFixedThreadPool(poolSize);
     }
 
     public void start() {
@@ -31,8 +31,14 @@ public abstract class SelectorEngine {
     }
 
     public void addKeyAction(KeyAction action) {
-        keyActionQueue.add(action);
+        pendingKeyActions.add(action);
     }
+
+    public record KeyAction(
+            SelectionKey key,
+            InterestOp interestOp,
+            boolean enable
+    ) {}
 
     protected void IOLoop() {
         try {
@@ -62,7 +68,9 @@ public abstract class SelectorEngine {
                             handleAccept(key);
                         }
                     }
-                } catch (RuntimeException ignored) {}
+                } catch (RuntimeException e) {
+                    logger.warning("Uncaught Runtime exception", e);
+                }
             }
         } catch (IOException e) {
             logger.error("Exception in main IO Loop", e);
@@ -70,13 +78,15 @@ public abstract class SelectorEngine {
     }
 
     protected void processKeyActions() {
-        while (!keyActionQueue.isEmpty()) {
-            KeyAction action = keyActionQueue.poll();
+        while (!pendingKeyActions.isEmpty()) {
+            KeyAction action = pendingKeyActions.poll();
+
             if (action == null || action.key() == null) {
                 continue;
             }
 
             SelectionKey key = action.key();
+
             if (!key.isValid()) {
                 continue;
             }
@@ -88,7 +98,7 @@ public abstract class SelectorEngine {
                     key.interestOps(key.interestOps() & ~action.interestOp().code);
                 }
             } catch (IllegalArgumentException e) {
-                logger.error("Failed to set interest op for key", e);
+                logger.warning("Failed to set interest op for key", e);
             }
         }
     }

@@ -1,15 +1,16 @@
 package nl.radiantrealm.library.net.ws;
 
+import java.util.Objects;
+
 public class WebsocketException extends RuntimeException {
     public final WebsocketFrame frame;
 
     public WebsocketException(WebsocketFrame frame) {
-        this.frame = frame;
+        this.frame = Objects.requireNonNull(frame);
     }
 
-    public WebsocketException(Exception e, WebsocketFrame frame) {
+    public WebsocketException(RuntimeException e, WebsocketFrame frame) {
         super(e);
-
-        this.frame = frame;
+        this.frame = Objects.requireNonNull(frame);
     }
 }

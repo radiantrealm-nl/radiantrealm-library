@@ -4,26 +4,26 @@ import java.util.HashMap;
 import java.util.Map;
 
 public enum StatusCode {
-    CONTINUE(100, null),
-    SWITCHING_PROTOCOLS(101, null),
-    PROCESSING(102, null),
+    CONTINUE(100, "Continue"),
+    SWITCHING_PROTOCOLS(101, "Switching Protocols"),
+    PROCESSING(102, "Processing"),
 
     OK(200, "OK"),
     CREATED(201, "Created"),
     ACCEPTED(202, "Accepted"),
-    NO_CONTENT(204, null),
+    NO_CONTENT(204, "No Content"),
     PARTIAL_CONTENT(206, "Partial Content"),
 
     MOVED_PERMANENTLY(301, "Moved Permanently"),
     FOUND(302, "Found"),
-    NOT_MODIFIED(304, null),
+    NOT_MODIFIED(304, "Not Modified"),
     TEMPORARY_REDIRECT(307, "Temporary Redirect"),
     PERMANENT_REDIRECT(308, "Permanent Redirect"),
 
     BAD_REQUEST(400, "Bad Request"),
     UNAUTHORIZED(401, "Unauthorized"),
     FORBIDDEN(403, "Forbidden"),
-    NOT_FOUND(404, "Not found"),
+    NOT_FOUND(404, "Not Found"),
     INVALID_METHOD(405, "Method Not Allowed"),
     CONFLICT(409, "Conflict"),
     UNPROCESSABLE_ENTITY(422, "Unprocessable Entity"),
@@ -31,7 +31,7 @@ public enum StatusCode {
 
     SERVER_ERROR(500, "Internal Server Error"),
     NOT_IMPLEMENTED(501, "Not Implemented"),
-    BAD_GATEWAY(502, "Bad Bad  Gateway"),
+    BAD_GATEWAY(502, "Bad Gateway"),
     SERVICE_UNAVAILABLE(503, "Service Unavailable"),
     GATEWAY_TIMEOUT(504, "Gateway Timeout");
 
