@@ -47,7 +47,6 @@ public abstract class WebsocketEngine extends SocketEngine {
                 executorService.submit(() -> {
                     try {
                         onOpen(session);
-                        logger.info("New pending upgrade");
                     } catch (WebsocketException e) {
                         sendClosingHandshake(session, e.frame);
                     } catch (RuntimeException e) {
