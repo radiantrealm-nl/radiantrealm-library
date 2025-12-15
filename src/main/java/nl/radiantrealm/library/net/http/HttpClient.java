@@ -1,6 +1,5 @@
 package nl.radiantrealm.library.net.http;
 
-import nl.radiantrealm.library.net.io.InterestOp;
 import nl.radiantrealm.library.net.io.SocketConnection;
 import nl.radiantrealm.library.net.io.SocketEngine;
 
@@ -49,6 +48,7 @@ public class HttpClient extends SocketEngine {
     public HttpResponse sendRequest(HttpConnection connection, HttpRequest request) {
         CompletableFuture<HttpResponse> future = new CompletableFuture<>();
         completableRequestMap.put(connection, future);
+        request.headers().add("Host", String.valueOf(connection.channel.socket().getRemoteSocketAddress()));
         connection.sendRequest(request);
 
         try {
