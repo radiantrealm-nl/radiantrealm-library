@@ -51,7 +51,6 @@ public class HttpServer extends SocketEngine {
                         connection.sendResponse(HttpResponse.wrap(StatusCode.NOT_FOUND));
                     }
                 } catch (HttpException e) {
-
                     try (connection) {
                         connection.sendResponse(e.response);
                     }
@@ -59,7 +58,7 @@ public class HttpServer extends SocketEngine {
                     logger.warning("Uncaught Runtime exception", e);
 
                     try (connection) {
-                        connection.sendResponse(HttpResponse.wrap(StatusCode.SERVER_ERROR));
+                        connection.sendResponse(HttpResponse.wrap(StatusCode.BAD_REQUEST));
                     }
                 }
             });
