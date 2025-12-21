@@ -1,155 +1,95 @@
 package nl.radiantrealm.library.util.json;
 
-import java.math.BigDecimal;
 import java.util.*;
-import java.util.function.Function;
 
-public class JsonObject extends JsonElement {
-    private final LinkedHashMap<String, JsonElement> map;
+public class JsonObject extends HashMap<String, JsonElement> implements JsonContainer {
 
-    public JsonObject() {
-        this.map = new LinkedHashMap<>();
+    public JsonObject() {}
+
+    public JsonObject(int initialCapacity) {
+        super(initialCapacity);
     }
 
-    public JsonObject(int capacity) {
-        this.map = new LinkedHashMap<>(capacity);
+    public JsonObject(int initialCapacity, float loadFactor) {
+        super(initialCapacity, loadFactor);
+    }
+
+    public JsonObject(Map<? extends String, ? extends JsonElement> map) {
+        super(map);
     }
 
     @Override
-    public JsonElement deepCopy() {
-        if (map.isEmpty()) {
-            return new JsonObject();
+    public String toString() {
+        if (isEmpty()) {
+            return "{}";
         }
 
-        JsonObject object = new JsonObject(map.size());
+        String[] strings = new String[size()];
 
-        for (Map.Entry<String, JsonElement> entry : map.entrySet()) {
-            object.add(entry.getKey(), entry.getValue());
+        int index = 0;
+        for (Map.Entry<String, JsonElement> entry : entrySet()) {
+            if (entry.getKey() != null) {
+                JsonElement element = entry.getValue();
+
+                if (element == null) {
+                    element = JsonNull.INSTANCE;
+                }
+
+                strings[index++] = String.format(
+                        "\"%s\":%s",
+                        entry.getKey(),
+                        element
+                );
+            }
         }
 
-        return object;
+        return String.format(
+                "{%s}",
+                String.join(",", strings)
+        );
     }
 
-    public static <K, V> JsonObject fromMap(Map<K, V> map, Function<K, String> keyFunction, Function<V, JsonElement> valueFunction) {
-        JsonObject object = new JsonObject(map.size());
+    public JsonElement put(String name, boolean value) {
+        return put(name, JsonBoolean.valueOf(value));
+    }
 
-        for (Map.Entry<K, V> entry : map.entrySet()) {
-            object.add(
-                    keyFunction.apply(entry.getKey()),
-                    valueFunction.apply(entry.getValue())
-            );
+    public JsonElement put(String name, String value) {
+        return put(name, new JsonString(value));
+    }
+
+    public JsonElement put(String name, Number value) {
+        return put(name, new JsonNumber(value));
+    }
+
+    @Override
+    public String prettyPrint(int depth, int offset) {
+        if (isEmpty()) {
+            return "{}";
         }
 
-        return object;
-    }
+        depth = Math.max(0, depth);
+        offset = Math.max(0, offset);
+        String[] strings = new String[size()];
+        String depthOffset = " ".repeat(depth + offset);
 
-    public Set<Map.Entry<String, JsonElement>> entrySet() {
-        return map.entrySet();
-    }
+        int index = 0;
+        for (Map.Entry<String, JsonElement> entry : entrySet()) {
+            if (entry.getKey() != null) {
+                JsonElement element = entry.getValue() == null ? JsonNull.INSTANCE : entry.getValue();
 
-    public Set<String> keySet() {
-        return map.keySet();
-    }
-
-    public Collection<JsonElement> values() {
-        return map.values();
-    }
-
-    public LinkedHashMap<String, JsonElement> asMap() {
-        return map;
-    }
-
-    public JsonElement get(String key) {
-        return map.get(key);
-    }
-
-    public JsonArray getAsJsonArray(String key) {
-        return map.get(key).getAsJsonArray();
-    }
-
-    public JsonNull getAsJsonNull(String key) {
-        return map.get(key).getAsJsonNull();
-    }
-
-    public JsonObject getAsJsonObject(String key) {
-        return map.get(key).getAsJsonObject();
-    }
-
-    public JsonPrimitive getAsJsonPrimitive(String key) {
-        return map.get(key).getAsJsonPrimitive();
-    }
-
-    public boolean getAsBoolean(String key) {
-        return map.get(key).getAsBoolean();
-    }
-
-    public Number getAsNumber(String key) {
-        return map.get(key).getAsNumber();
-    }
-
-    public String getAsString(String key) {
-        return map.get(key).getAsString();
-    }
-
-    public UUID getAsUUID(String key) {
-        return map.get(key).getAsUUID();
-    }
-
-    public <T extends Enum<T>> Enum<T> getAsEnum(String key, Class<T> enumerator) {
-        return map.get(key).getAsEnum(enumerator);
-    }
-
-    public BigDecimal getAsBigDecimal(String key) {
-        return map.get(key).getAsBigDecimal();
-    }
-
-    public void add(String key, JsonElement element) {
-        map.put(key, element == null ? JsonNull.INSTANCE : element);
-    }
-
-    public void add(String key, Boolean bool) {
-        map.put(key, bool == null ? JsonNull.INSTANCE : new JsonPrimitive(bool));
-    }
-
-    public void add(String key, Number number) {
-        map.put(key, number == null ? JsonNull.INSTANCE : new JsonPrimitive(number));
-    }
-
-    public void add(String key, String string) {
-        map.put(key, string == null ? JsonNull.INSTANCE : new JsonPrimitive(string));
-    }
-
-    public void add(String key, UUID uuid) {
-        add(key, uuid.toString());
-    }
-
-    public void add(String key, Enum<?> enumerator) {
-        add(key, enumerator.name());
-    }
-
-    public void addAll(JsonObject object) {
-        for (Map.Entry<String, JsonElement> entry : object.entrySet()) {
-            add(entry.getKey(), entry.getValue());
+                strings[index++] = String.format(
+                        "%s\"%s\": %s",
+                        depthOffset,
+                        entry.getKey(),
+                        element.prettyPrint(depth, offset + depth)
+                );
+            }
         }
-    }
 
-    public void remove(String key) {
-        map.remove(key);
-    }
-
-    public boolean has(String key) {
-        return map.containsKey(key);
-    }
-
-    public int size() {
-        return map.size();
-    }
-
-    public boolean isEmpty() {
-        return map.isEmpty();
-    }
-
-    public void clear() {
-        map.clear();
+        return String.format(
+                "{\n%s\n%s}",
+                String.join(",\n", strings),
+                " ".repeat(offset)
+        );
     }
 }

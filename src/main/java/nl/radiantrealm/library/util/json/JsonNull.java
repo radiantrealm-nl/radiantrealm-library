@@ -1,10 +1,13 @@
 package nl.radiantrealm.library.util.json;
 
-public class JsonNull extends JsonElement {
+public class JsonNull implements JsonPrimitive {
     public static final JsonNull INSTANCE = new JsonNull();
+    private static final String content = "null";
+
+    private JsonNull() {}
 
     @Override
-    public JsonElement deepCopy() {
-        return INSTANCE;
+    public String toString() {
+        return content;
     }
 }
