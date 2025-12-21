@@ -1,6 +1,5 @@
 package nl.radiantrealm.library.net.http;
 
-import nl.radiantrealm.library.net.io.InterestOp;
 import nl.radiantrealm.library.net.io.SocketConnection;
 import nl.radiantrealm.library.net.io.SocketEngine;
 
@@ -8,7 +7,6 @@ import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.SocketChannel;
-import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
@@ -49,6 +47,8 @@ public class HttpClient extends SocketEngine {
     public HttpResponse sendRequest(HttpConnection connection, HttpRequest request) {
         CompletableFuture<HttpResponse> future = new CompletableFuture<>();
         completableRequestMap.put(connection, future);
+
+        request.headers().add("Host", String.valueOf(connection.channel.socket().getRemoteSocketAddress()));
         connection.sendRequest(request);
 
         try {

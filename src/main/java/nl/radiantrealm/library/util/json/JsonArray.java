@@ -1,112 +1,92 @@
 package nl.radiantrealm.library.util.json;
 
-import org.jetbrains.annotations.NotNull;
-
 import java.util.*;
-import java.util.function.Function;
 
-public class JsonArray extends JsonElement implements Iterable<JsonElement> {
-    private final ArrayList<JsonElement> list;
+public class JsonArray extends ArrayList<JsonElement> implements JsonContainer {
 
-    public JsonArray() {
-        this.list = new ArrayList<>();
+    public JsonArray() {}
+
+    public JsonArray(int initialCapacity) {
+        super(initialCapacity);
     }
 
-    public JsonArray(int capacity) {
-        this.list = new ArrayList<>(capacity);
-    }
-
-    @Override
-    public JsonElement deepCopy() {
-        if (list.isEmpty()) {
-            return new JsonArray();
-        }
-
-        JsonArray array = new JsonArray(list.size());
-
-        for (JsonElement element : list) {
-            array.add(element);
-        }
-
-        return array;
+    public JsonArray(Collection<? extends JsonElement> collection) {
+        super(collection);
     }
 
     @Override
-    public @NotNull Iterator<JsonElement> iterator() {
-        return list.iterator();
-    }
-
-    public static <E> JsonArray fromList(Collection<E> collection, Function<E, JsonElement> function) {
-        JsonArray array = new JsonArray(collection.size());
-
-        for (E e : collection) {
-            array.add(function.apply(e));
+    public String toString() {
+        if (isEmpty()) {
+            return "[]";
         }
 
-        return array;
+        String[] strings = new String[size()];
+
+        int index = 0;
+        for (JsonElement element : this) {
+            if (element == null) {
+                element = JsonNull.INSTANCE;
+            }
+
+            strings[index++] = element.toString();
+        }
+
+        return String.format(
+                "[%s]",
+                String.join(",", strings)
+        );
     }
 
-    public List<JsonElement> asList() {
-        return list;
+    public boolean add(boolean value) {
+        return add(JsonBoolean.valueOf(value));
     }
 
-    public int size() {
-        return list.size();
+    public boolean add(String value) {
+        return add(new JsonString(value));
     }
 
-    public boolean contains(JsonElement element) {
-        return list.contains(element);
+    public boolean add(Number value) {
+        return add(new JsonNumber(value));
     }
 
-    public boolean isEmpty() {
-        return list.isEmpty();
+    public void add(int index, boolean value) {
+        add(index, JsonBoolean.valueOf(value));
     }
 
-    public JsonElement get(int index) {
-        return list.get(index);
+    public void add(int index, String value) {
+        add(index, new JsonString(value));
     }
 
-    public JsonElement getFirst() {
-        return list.getFirst();
+    public void add(int index, Number value) {
+        add(index, new JsonNumber(value));
     }
 
-    public JsonElement getLast() {
-        return list.getLast();
-    }
+    @Override
+    public String prettyPrint(int depth, int offset) {
+        if (isEmpty()) {
+            return "[]";
+        }
 
-    public void add(JsonElement element) {
-        list.add(element == null ? JsonNull.INSTANCE : element);
-    }
+        depth = Math.max(0, depth);
+        offset = Math.max(0, offset);
+        String[] strings = new String[size()];
+        String depthOffset = " ".repeat(depth + offset);
 
-    public void add(Boolean bool) {
-        list.add(bool == null ? JsonNull.INSTANCE : new JsonPrimitive(bool));
-    }
+        int index = 0;
+        for (JsonElement element : this) {
+            element = element == null ? JsonNull.INSTANCE : element;
 
-    public void add(Number number) {
-        list.add(number == null ? JsonNull.INSTANCE : new JsonPrimitive(number));
-    }
+            strings[index++] = String.format(
+                    "%s%s",
+                    depthOffset,
+                    element.prettyPrint(depth, offset + depth)
+            );
+        }
 
-    public void add(String string) {
-        list.add(string == null ? JsonNull.INSTANCE : new JsonPrimitive(string));
-    }
-
-    public void add(UUID uuid) {
-        add(uuid.toString());
-    }
-
-    public void add(Enum<?> enumerator) {
-        add(enumerator.name());
-    }
-
-    public void addAll(JsonArray array) {
-        list.addAll(array.list);
-    }
-
-    public void remove(JsonElement element) {
-        list.remove(element);
-    }
-
-    public void clear() {
-        list.clear();
+        return String.format(
+                "[\n%s\n%s]",
+                String.join(",\n", strings),
+                " ".repeat(offset)
+        );
     }
 }

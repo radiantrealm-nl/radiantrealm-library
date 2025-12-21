@@ -26,8 +26,10 @@ public abstract class SelectorEngine {
     }
 
     public void start() {
-        isRunning.set(true);
-        executorService.submit(this::IOLoop);
+        if (!isRunning.get()) {
+            isRunning.set(true);
+            executorService.submit(this::IOLoop);
+        }
     }
 
     public void addKeyAction(KeyAction action) {
