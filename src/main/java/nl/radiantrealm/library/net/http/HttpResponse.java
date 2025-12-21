@@ -56,7 +56,7 @@ public record HttpResponse(
 
     public static HttpResponse wrap(StatusCode statusCode, String message) {
         JsonObject object = new JsonObject();
-        object.add(switch (Objects.requireNonNull(statusCode).code) {
+        object.put(switch (Objects.requireNonNull(statusCode).code) {
             case 200, 201, 202, 206 -> "info";
             case 301, 302, 307, 308 -> "redirect";
             default -> "error";
