@@ -48,7 +48,14 @@ public class HttpClient extends SocketEngine {
         CompletableFuture<HttpResponse> future = new CompletableFuture<>();
         completableRequestMap.put(connection, future);
 
-        request.headers().add("Host", String.valueOf(connection.channel.socket().getRemoteSocketAddress()));
+        if (connection.channel.socket().getRemoteSocketAddress() instanceof InetSocketAddress remoteAddress) {
+            request.headers().add("Host", String.format(
+                    "%s:%s",
+                    remoteAddress.getAddress().getHostAddress(),
+                    remoteAddress.getPort()
+            ));
+        }
+
         connection.sendRequest(request);
 
         try {
