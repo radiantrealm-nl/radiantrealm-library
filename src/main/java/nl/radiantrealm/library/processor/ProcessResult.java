@@ -7,6 +7,13 @@ public record ProcessResult(
         StatusCode statusCode,
         JsonObject object
 ) {
+    public static ProcessResult ok() {
+        return ok(
+                StatusCode.OK,
+                new JsonObject()
+        );
+    }
+
     public static ProcessResult ok(JsonObject object) {
         return ok(StatusCode.OK, object);
     }
