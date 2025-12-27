@@ -6,43 +6,43 @@ import com.zaxxer.hikari.HikariDataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
-public abstract class HikariDatabase extends AbstractDatabase {
-    protected HikariDataSource dataSource;
+public class HikariDatabase implements Database {
+    private final HikariDataSource dataSource;
 
-    protected HikariDataSource buildHikariDataSource() {
+    public HikariDatabase(HikariConfig config) {
+        this.dataSource = new HikariDataSource(config);
+    }
+
+    public static HikariConfig createDefaultConfiguration(String url, String username, String password) {
         HikariConfig config = new HikariConfig();
-        config.setJdbcUrl(databaseURL());
-        config.setUsername(databaseUsername());
-        config.setPassword(databasePassword());
-        return new HikariDataSource(config);
+        config.setJdbcUrl(url);
+        config.setUsername(username);
+        config.setPassword(password);
+        return config;
+    }
+
+    public static HikariConfig createSQLiteConfiguration(String filePath) {
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl(String.format("jdbc:sqlite:%s", filePath));
+        return config;
     }
 
     @Override
-    public void connect() {
-        if (dataSource == null || dataSource.isClosed()) {
-            dataSource = buildHikariDataSource();
+    public void connect() throws SQLException {
+        try (Connection connection = getConnection()) {
+            if (!connection.isValid(60)) {
+                throw new SQLException("Failed to validate the database connection");
+            }
         }
     }
 
     @Override
     public void disconnect() {
-        if (dataSource != null && !dataSource.isClosed()) {
-            dataSource.close();
-        }
+        dataSource.close();
     }
 
     @Override
     public Connection getConnection() throws SQLException {
-        return getConnection(true);
-    }
-
-    public Connection getConnection(boolean autoCommit) throws SQLException {
-        if (dataSource == null || dataSource.isClosed()) {
-            connect();
-        }
-
-        Connection connection = dataSource.getConnection();
-        connection.setAutoCommit(autoCommit);
-        return connection;
+        return dataSource.getConnection();
     }
 }

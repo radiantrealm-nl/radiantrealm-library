@@ -54,7 +54,7 @@ public abstract class WebsocketEngine extends SocketEngine {
                     }
                 });
             } catch (IOException e) {
-                logger.error("Exceptionw hile upgrading channel", e);
+                logger.error("Exception while upgrading channel", e);
                 connection.silentClose();
             }
         }
