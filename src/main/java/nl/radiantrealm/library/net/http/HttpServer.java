@@ -60,6 +60,12 @@ public class HttpServer extends SocketEngine {
                     try (connection) {
                         connection.sendResponse(HttpResponse.wrap(StatusCode.BAD_REQUEST));
                     }
+                } catch (Exception e) {
+                    logger.error("Exception while handling request", e);
+
+                    try (connection) {
+                        connection.sendResponse(HttpResponse.wrap(StatusCode.SERVER_ERROR));
+                    }
                 }
             });
         }
