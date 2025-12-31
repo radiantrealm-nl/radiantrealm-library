@@ -45,4 +45,10 @@ public class HikariDatabase implements Database {
     public Connection getConnection() throws SQLException {
         return dataSource.getConnection();
     }
+
+    public Connection getConnection(boolean autoCommit) throws SQLException {
+        Connection connection = dataSource.getConnection();
+        connection.setAutoCommit(autoCommit);
+        return connection;
+    }
 }
