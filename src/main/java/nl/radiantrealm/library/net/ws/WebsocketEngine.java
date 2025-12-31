@@ -50,7 +50,9 @@ public abstract class WebsocketEngine extends SocketEngine {
                     } catch (WebsocketException e) {
                         sendClosingHandshake(session, e.frame);
                     } catch (RuntimeException e) {
-                        logger.warning("Uncaught Runtime exception");
+                        logger.warning("Uncaught Runtime exception", e);
+                    } catch (Exception e) {
+                        logger.error("Uncaught exception", e);
                     }
                 });
             } catch (IOException e) {
@@ -86,6 +88,8 @@ public abstract class WebsocketEngine extends SocketEngine {
                     sendClosingHandshake(session, e.frame);
                 } catch (RuntimeException e) {
                     logger.warning("Uncaught Runtime exception", e);
+                } catch (Exception e) {
+                    logger.error("Uncaught exception", e);
                 }
             });
         }
@@ -110,18 +114,20 @@ public abstract class WebsocketEngine extends SocketEngine {
                         onClose(session);
                     } catch (RuntimeException e) {
                         logger.warning("Uncaught Runtime exception", e);
+                    } catch (Exception e) {
+                        logger.error("Uncaught exception", e);
                     }
                 });
             }
         }
     }
 
-    protected void onOpen(WebsocketSession session) {}
-    protected void onClose(WebsocketSession session) {}
-    protected void onText(WebsocketSession session, String string) {}
-    protected void onBinary(WebsocketSession session, byte[] bytes) {}
+    protected void onOpen(WebsocketSession session) throws Exception {}
+    protected void onClose(WebsocketSession session) throws Exception {}
+    protected void onText(WebsocketSession session, String string) throws Exception {}
+    protected void onBinary(WebsocketSession session, byte[] bytes) throws Exception {}
 
-    protected void handleFrame(WebsocketSession session, WebsocketFrame frame) {
+    protected void handleFrame(WebsocketSession session, WebsocketFrame frame) throws Exception {
         session.lastActivityMillis.set(System.currentTimeMillis());
 
         switch (frame.operatorCode()) {

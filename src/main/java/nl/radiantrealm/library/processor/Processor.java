@@ -17,7 +17,7 @@ public class Processor {
         processorThread.interrupt();
     }
 
-    public ProcessResult createProcess(ProcessHandler handler) {
+    public ProcessResult createProcess(ProcessHandler handler) throws Exception {
         if (handler == null) {
             return null;
         }
@@ -30,20 +30,20 @@ public class Processor {
         );
 
         processQueue.add(process);
-
-        try {
-            return future.get();
-        } catch (Exception e) {
-            return null;
-        }
+        return future.get();
     }
 
     private void processLoop() {
         try {
             while (!Thread.currentThread().isInterrupted()) {
                 Process process = processQueue.take();
-                ProcessResult result = process.handler().handle(process);
-                process.future().complete(result);
+
+                try {
+                    ProcessResult result = process.handler().handle(process);
+                    process.future().complete(result);
+                } catch (Exception e) {
+                    process.future().completeExceptionally(e);
+                }
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();

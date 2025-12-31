@@ -14,6 +14,16 @@ public class JsonArray extends ArrayList<JsonElement> implements JsonContainer {
         super(collection);
     }
 
+    public JsonArray(String input) {
+        JsonElement element = JsonReader.parse(input);
+
+        if (element instanceof JsonArray array) {
+            addAll(array);
+        } else {
+            throw new JsonFormatException("Not a JSON array");
+        }
+    }
+
     @Override
     public String toString() {
         if (isEmpty()) {
