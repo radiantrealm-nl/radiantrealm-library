@@ -18,6 +18,16 @@ public class JsonObject extends HashMap<String, JsonElement> implements JsonCont
         super(map);
     }
 
+    public JsonObject(String input) {
+        JsonElement element = JsonReader.parse(input);
+
+        if (element instanceof JsonObject object) {
+            putAll(object);
+        } else {
+            throw new JsonFormatException("Not a JSON object");
+        }
+    }
+
     @Override
     public String toString() {
         if (isEmpty()) {
