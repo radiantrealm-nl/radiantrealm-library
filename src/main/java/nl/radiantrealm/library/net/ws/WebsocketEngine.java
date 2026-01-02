@@ -48,7 +48,7 @@ public abstract class WebsocketEngine extends SocketEngine {
                     try {
                         onOpen(session);
                     } catch (WebsocketException e) {
-                        sendClosingHandshake(session, e.frame);
+                        session.sendFrame(e.frame);
                     } catch (RuntimeException e) {
                         logger.warning("Uncaught Runtime exception", e);
                     } catch (Exception e) {
@@ -85,7 +85,7 @@ public abstract class WebsocketEngine extends SocketEngine {
 
                     handleFrame(session, frame);
                 } catch (WebsocketException e) {
-                    sendClosingHandshake(session, e.frame);
+                    session.sendFrame(e.frame);
                 } catch (RuntimeException e) {
                     logger.warning("Uncaught Runtime exception", e);
                 } catch (Exception e) {
