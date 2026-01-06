@@ -14,7 +14,7 @@ public abstract class WebsocketServer extends WebsocketEngine implements HttpHan
     }
 
     @Override
-    public void handle(HttpConnection connection, HttpRequest request) {
+    public void handle(HttpConnection connection, HttpRequest request) throws Exception {
         HttpResponse response = WebsocketHandshake.performHandshake(request);
 
         connection.key.cancel();
