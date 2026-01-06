@@ -36,10 +36,10 @@ public class AggregatedHttpParser {
         HttpHeaders headers = new HttpHeaders();
 
         for (int i = 1; i < strings.length; i++) {
-            String[] split = strings[i].split(": ", 2);
+            String[] split = strings[i].split(":", 2);
 
             if (split.length == 2) {
-                headers.add(split[0], split[1]);
+                headers.add(split[0].trim(), split[1].trim());
             }
         }
 
