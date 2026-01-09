@@ -15,13 +15,7 @@ public class JsonArray extends ArrayList<JsonElement> implements JsonContainer {
     }
 
     public JsonArray(String input) {
-        JsonElement element = JsonReader.parse(input);
-
-        if (element instanceof JsonArray array) {
-            addAll(array);
-        } else {
-            throw new JsonFormatException("Not a JSON array");
-        }
+        addAll(JsonReader.parse(input).getAsJsonArray());
     }
 
     @Override
