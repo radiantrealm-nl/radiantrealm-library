@@ -24,6 +24,11 @@ public record Cookie(
 
     public static List<Cookie> parse(HttpHeaders headers) {
         List<String> headerValues = headers.get("cookie");
+
+        if (headerValues == null || headerValues.isEmpty()) {
+            return List.of();
+        }
+
         List<Cookie> cookies = new ArrayList<>();
 
         for (String headerValue : headerValues) {
