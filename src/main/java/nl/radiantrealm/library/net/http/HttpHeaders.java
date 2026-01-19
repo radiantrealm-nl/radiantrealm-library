@@ -32,15 +32,15 @@ public class HttpHeaders {
     }
 
     public void add(String key, String value) {
-        map.computeIfAbsent(key, k -> new ArrayList<>()).add(value);
+        map.computeIfAbsent(key.toLowerCase(), k -> new ArrayList<>()).add(value);
     }
 
     public List<String> get(String key) {
-        return map.get(key);
+        return map.get(key.toLowerCase());
     }
 
     public String getFirst(String key) {
-        List<String> list = map.get(key);
+        List<String> list = map.get(key.toLowerCase());
 
         if (list == null) {
             return null;
@@ -50,11 +50,11 @@ public class HttpHeaders {
     }
 
     public boolean containsKey(String key) {
-        return map.containsKey(key);
+        return map.containsKey(key.toLowerCase());
     }
 
     public void remove(String key) {
-        map.remove(key);
+        map.remove(key.toLowerCase());
     }
 
     public void clear() {
