@@ -2,8 +2,9 @@ package nl.radiantrealm.library.net.http.cookie;
 
 import nl.radiantrealm.library.net.http.HttpHeaders;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public record Cookie(
         String name,
@@ -18,18 +19,18 @@ public record Cookie(
 
         return new Cookie(
                 parts[0].trim(),
-                parts[0].trim()
+                parts[1].trim()
         );
     }
 
-    public static List<Cookie> parse(HttpHeaders headers) {
+    public static Map<String, Cookie> parse(HttpHeaders headers) {
         List<String> headerValues = headers.get("cookie");
 
         if (headerValues == null || headerValues.isEmpty()) {
-            return List.of();
+            return Map.of();
         }
 
-        List<Cookie> cookies = new ArrayList<>();
+        Map<String, Cookie> cookies = new HashMap<>();
 
         for (String headerValue : headerValues) {
             String[] split = headerValue.split(";");
@@ -38,7 +39,7 @@ public record Cookie(
                 Cookie cookie = parse(string);
 
                 if (cookie != null) {
-                    cookies.add(cookie);
+                    cookies.put(cookie.name, cookie);
                 }
             }
         }
