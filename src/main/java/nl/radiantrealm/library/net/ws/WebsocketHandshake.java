@@ -30,11 +30,11 @@ public class WebsocketHandshake {
             throw new HttpException(HttpResponse.wrap(StatusCode.BAD_REQUEST));
         }
 
-        if (!"Upgrade".equals(request.headers().getFirst("Connection"))) {
+        if (!"upgrade".equalsIgnoreCase(request.headers().getFirst("Connection"))) {
             throw new HttpException(HttpResponse.wrap(StatusCode.BAD_REQUEST));
         }
 
-        if (!"websocket".equals(request.headers().getFirst("Upgrade"))) {
+        if (!"websocket".equalsIgnoreCase(request.headers().getFirst("Upgrade"))) {
             throw new HttpException(HttpResponse.wrap(StatusCode.BAD_REQUEST));
         }
 
