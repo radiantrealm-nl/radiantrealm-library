@@ -46,7 +46,7 @@ public class JsonReader {
                         nextChar(true);
                         containerStack.pop();
 
-                        if (nextChar(false) == ',') {
+                        if (!containerStack.isEmpty() && nextChar(false) == ',') {
                             nextChar(true);
                         }
                     } else {
@@ -82,7 +82,7 @@ public class JsonReader {
                         nextChar(true);
                         containerStack.pop();
 
-                        if (nextChar(false) == ',') {
+                        if (!containerStack.isEmpty() && nextChar(false) == ',') {
                             nextChar(true);
                         }
                     } else if (parseJsonElement() instanceof JsonString string) {
