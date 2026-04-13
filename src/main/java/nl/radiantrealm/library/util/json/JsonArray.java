@@ -53,6 +53,24 @@ public class JsonArray extends ArrayList<JsonElement> implements JsonContainer {
         return add(new JsonNumber(value));
     }
 
+    public void add(String... values) {
+        for (String value : values) {
+            add(new JsonString(value));
+        }
+    }
+
+    public void add(Number... values) {
+        for (Number value : values) {
+            add(new JsonNumber(value));
+        }
+    }
+
+    public void add(boolean... values) {
+        for (boolean value : values) {
+            add(JsonBoolean.valueOf(value));
+        }
+    }
+
     public void add(int index, boolean value) {
         add(index, JsonBoolean.valueOf(value));
     }

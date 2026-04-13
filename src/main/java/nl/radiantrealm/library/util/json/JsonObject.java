@@ -65,6 +65,30 @@ public class JsonObject extends HashMap<String, JsonElement> implements JsonCont
         return put(name, new JsonNumber(value));
     }
 
+    public JsonElement put(String name, String... values) {
+        JsonArray array = new JsonArray(values.length);
+        for (String value : values) {
+            array.add(value);
+        }
+        return put(name, array);
+    }
+
+    public JsonElement put(String name, Number... values) {
+        JsonArray array = new JsonArray(values.length);
+        for (Number value : values) {
+            array.add(value);
+        }
+        return put(name, array);
+    }
+
+    public JsonElement put(String name, boolean... values) {
+        JsonArray array = new JsonArray(values.length);
+        for (boolean value : values) {
+            array.add(value);
+        }
+        return put(name, array);
+    }
+
     @Override
     public String prettyPrint(int depth, int offset) {
         if (isEmpty()) {
